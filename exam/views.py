@@ -894,9 +894,9 @@ def main_exam(request):
                                 is_active=True
                             )
                             a_user.set_password(temp_user.mobile)
-                            a_user.save(using='ssc') 
+                            a_user.save()
 
-                            CentreUserAccount.objects.using('ssc').create(
+                            CentreUserAccount.objects.create(
                                 user=a_user,
                                 username=new_username,
                                 owner_centre=temp_user.name,
