@@ -30,10 +30,24 @@ X_FRAME_OPTIONS = "SAMEORIGIN"
 SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DJANGO_ENV = config("DJANGO_ENV", default="development").strip().lower()
+DEBUG = DJANGO_ENV != "production"
 
-# ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-ALLOWED_HOSTS = ['*', 'sscegov.com', 'sscentrepreneur.com']
+if DJANGO_ENV == "production":
+    ALLOWED_HOSTS = [
+        "sscentrepreneur.com",
+        "www.sscentrepreneur.com",
+        "127.0.0.1",
+        "localhost",
+    ]
+    CSRF_TRUSTED_ORIGINS = [
+        "https://sscentrepreneur.com",
+        "https://www.sscentrepreneur.com",
+        "https://checkout.razorpay.com",
+    ]
+else:
+    # ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+    ALLOWED_HOSTS = ['*', 'sscegov.com', 'sscentrepreneur.com']
 
 
 # Application definition
@@ -131,8 +145,6 @@ TEMPLATES = [
 #         },
 #     }
 # }
-
-DJANGO_ENV = config("DJANGO_ENV", default="development").strip().lower()
 
 if DJANGO_ENV == "production":
     DATABASES = {
@@ -285,11 +297,6 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 
 CSRF_FAILURE_VIEW = 'web.views.custom_csrf_failure'
-
-CSRF_TRUSTED_ORIGINS = ['https://sscegov.com', 'https://checkout.razorpay.com/v1/checkout.js']
-
-
-
 
 LOGGING = {
     'version': 1,
