@@ -74,30 +74,40 @@
                 <p style="text-align: center;">popular services not available</p>
                 {% endif %}
             </div>
-          <!-- / Content -->
-          <h4 class="py-2 mt-3">Latest News</h4>
-          <div class="grid grid-cols-1 gap-x-5 md:grid-cols-2 xl:grid-cols-4">
-            {% if latest_news %}
-            {% for latestnews in latest_news %}
-              <a class="block overflow-hidden transition card group/card hover:shadow-lg" href="#!">
-                  <div class="relative">
-                      <img class="transition-transform duration-500 ease-in-out group-hover/card:scale-105 rounded-t-md" src="{{ latestnews.image.url }}" alt="Image">
-                  </div>
-                  <div class="card-body" style="background: powderblue;">
-                      <h6 class="mb-4 text-15">
-                          {{ latestnews.title }}
-                      </h6>
-                      <p class="mt-2 text-slate-500 dark:text-zink-200">
-                          {{ latestnews.content }}
-                      </p>
-                  </div>
-              </a>
-              {% endfor %}
-              {% else %}
-              <p style="text-align: center;">latest news not available</p>
-              {% endif %}
-          </div><!--end grid-->
- 
+<!-- / Content -->
+<h4 class="py-2 mt-3">Latest News</h4>
+<div class="grid grid-cols-1 gap-x-5 md:grid-cols-2 xl:grid-cols-4">
+  {% if latest_news %}
+  {% for latestnews in latest_news %}
+  <div class="relative block overflow-hidden transition card group/card hover:shadow-lg">
+
+      <div class="relative">
+          <img class="transition-transform duration-500 ease-in-out group-hover/card:scale-105 rounded-t-md" 
+               src="{{ latestnews.image.url }}" alt="{{ latestnews.title }}">
+          
+          <!-- Download Icon -->
+          <a href="{{ latestnews.image.url }}" download="{{ latestnews.title|slugify }}.jpg"
+             class="absolute top-2 right-2 bg-white/80 hover:bg-white text-sky-600 rounded-full p-2 shadow-md transition"
+             title="Download Image">
+              <i data-lucide="download" class="size-4"></i>
+          </a>
+      </div>
+
+      <div class="card-body" style="background: powderblue;">
+          <h6 class="mb-4 text-15">
+              {{ latestnews.title }}
+          </h6>
+          <p class="mt-2 text-slate-500 dark:text-zink-200">
+              {{ latestnews.content }}
+          </p>
+      </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <p style="text-align: center;">latest news not available</p>
+  {% endif %}
+</div><!--end grid-->
+   
           <div class="grid grid-cols-1 gap-x-5 xl:grid-cols-2 py-5">
             
             <div class="card" style="background: white;">

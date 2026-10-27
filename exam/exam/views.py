@@ -1067,7 +1067,7 @@ def details_entry(request):
             )
 
             configuration = Configuration()
-            configuration.api_key["api-key"] = settings.SENDINBLUE_API_KEY
+            configuration.api_key["api-key"] = settings.BREVO_API_KEY
 
             api_client = ApiClient(configuration)
             api_instance = transactional_emails_api.TransactionalEmailsApi(api_client)
@@ -1272,3 +1272,16 @@ def temporary_user(request):
 
     return render(request, "web/exam/register.html",{"states": states,"districts": districts, "selected_state": selected_state})
     
+
+
+
+
+
+
+
+
+
+
+
+
+

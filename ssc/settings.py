@@ -31,8 +31,10 @@ SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DJANGO_ENV = config("DJANGO_ENV", default="development").strip().lower()
+BREVO_API_KEY = config("BREVO_API_KEY", default="")
 DEBUG = DJANGO_ENV != "production"
 
+# ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 if DJANGO_ENV == "production":
     ALLOWED_HOSTS = [
         "sscentrepreneur.com",
@@ -46,8 +48,7 @@ if DJANGO_ENV == "production":
         "https://checkout.razorpay.com",
     ]
 else:
-    # ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-    ALLOWED_HOSTS = ['*', 'sscegov.com', 'sscentrepreneur.com']
+    ALLOWED_HOSTS = ["*", "sscegov.com", "sscentrepreneur.com"]
 
 
 # Application definition
@@ -125,25 +126,8 @@ TEMPLATES = [
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
 # }
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'sscegov',
-#         'USER': 'root',
-#         # Database password is supplied via the environment.
-#         'HOST': 'localhost',
-#         'PORT': '3306',
-#         'OPTIONS': {
-#             'charset': 'utf8',  
-#         },
-#     }
 # }
 
 if DJANGO_ENV == "production":
@@ -182,14 +166,13 @@ else:
 #     },
 # ]
 
-SENDINBLUE_API_KEY = os.getenv("SENDINBLUE_API_KEY", "")
 ANYMAIL = {
     "BREVO": {
-        "API_KEY": os.getenv("BREVO_API_KEY", "your-brevo-api-key"),
+        "API_KEY": config("BREVO_API_KEY", default=""),
     }
 }
 EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
-DEFAULT_FROM_EMAIL = "samatwaservicecenter.gov.in@gmail.com"
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="")
 
 
 
@@ -252,16 +235,14 @@ LOGOUT_REDIRECT_URL = '/'
 # EMAIL_PORT = 587
 # EMAIL_USE_TLS = True
 # EMAIL_HOST_USER = '79f983002@smtp-brevo.com'
-# EMAIL_HOST_PASSWORD is loaded from the local environment.
-# Keep local development usable when the optional email environment variables are absent.
-# Deployment values still override these defaults through .env or the process environment.
-EMAIL_BACKEND = config("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
-EMAIL_HOST = config("EMAIL_HOST", default="localhost")
-EMAIL_PORT = config("EMAIL_PORT", default=25, cast=int)
-EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
-EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+# EMAIL_HOST_PASSWORD = '9YLzAk1PNcDMfQqI'
+EMAIL_BACKEND = config("EMAIL_BACKEND")
+EMAIL_HOST = config("EMAIL_HOST")
+EMAIL_PORT = config("EMAIL_PORT")
+EMAIL_HOST_USER = config("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="")
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
@@ -269,10 +250,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'web.User'
 
 load_dotenv()
-
-# Mapbox's public access token is injected into the page from deployment
-# configuration instead of being committed to the repository.
-MAPBOX_ACCESS_TOKEN = os.getenv("MAPBOX_ACCESS_TOKEN", "")
 
 
 TIME_ZONE = 'Asia/Kolkata'
@@ -288,8 +265,8 @@ RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "54bep8rW085LCIk6rySSDcr2
 PSPDFKIT_API_KEY = os.getenv("PSPDFKIT_API_KEY", "")
 
 # reCAPTCHA keys
-RECAPTCHA_SITE_KEY = os.getenv("RECAPTCHA_SITE_KEY", "6LfhACgqAAAAAH6BOnzNkIfbY-yRgk_XCNKWTH8i")
-RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY", "")
+RECAPTCHA_SITE_KEY = config("RECAPTCHA_SITE_KEY", default="")
+RECAPTCHA_SECRET_KEY = config("RECAPTCHA_SECRET_KEY", default="")
 
 
 # Secure Proxy Header
@@ -297,6 +274,10 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 
 CSRF_FAILURE_VIEW = 'web.views.custom_csrf_failure'
+
+
+
+
 
 LOGGING = {
     'version': 1,
@@ -508,3 +489,8 @@ DEFAULT_CHARSET = 'utf-8'
 OPTIONS = {
     'charset': 'utf8mb4',
 }
+
+
+
+
+

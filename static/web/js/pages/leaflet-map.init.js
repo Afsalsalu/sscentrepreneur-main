@@ -1,3 +1,8 @@
+const mapboxAccessToken =
+    typeof window !== "undefined" && typeof window.MAPBOX_ACCESS_TOKEN === "string"
+        ? window.MAPBOX_ACCESS_TOKEN
+        : "";
+
 /*
 Template Name: Tailwick - Admin & Dashboard Template
 Author: Themesdesign
@@ -7,25 +12,13 @@ File: Leaflet init js
 */
 
 // leaflet-map
-var mapboxAccessToken = "";
-var mapboxTokenElement = document.getElementById("mapbox-access-token");
-if (mapboxTokenElement) {
-    try {
-        mapboxAccessToken = JSON.parse(mapboxTokenElement.textContent || "null") || "";
-    } catch (error) {
-        mapboxAccessToken = "";
-    }
-}
-if (!mapboxAccessToken && typeof window.MAPBOX_ACCESS_TOKEN === "string") {
-    mapboxAccessToken = window.MAPBOX_ACCESS_TOKEN;
-}
 var mymap = L.map('leaflet-map').setView([51.505, -0.09], 13);
 
 L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapboxAccessToken + '', {
     maxZoom: 18,
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
         '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-        'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+        'Imagery Â© <a href="https://www.mapbox.com/">Mapbox</a>',
     id: 'mapbox/streets-v11',
     tileSize: 512,
     zoomOffset: -1
@@ -38,7 +31,7 @@ L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_toke
     maxZoom: 18,
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
         '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-        'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+        'Imagery Â© <a href="https://www.mapbox.com/">Mapbox</a>',
     id: 'mapbox/streets-v11',
     tileSize: 512,
     zoomOffset: -1
@@ -74,7 +67,7 @@ L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_toke
     maxZoom: 18,
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
         '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-        'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+        'Imagery Â© <a href="https://www.mapbox.com/">Mapbox</a>',
     id: 'mapbox/streets-v11',
     tileSize: 512,
     zoomOffset: -1
@@ -134,7 +127,7 @@ L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_toke
     maxZoom: 18,
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
         '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-        'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+        'Imagery Â© <a href="https://www.mapbox.com/">Mapbox</a>',
     id: 'mapbox/light-v9',
     tileSize: 512,
     zoomOffset: -1
@@ -183,7 +176,7 @@ L.marker([39.61, -105.02], { icon: mapPinIcon }).bindPopup('This is Littleton, C
 
 var mbAttr = 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
     '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-    'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+    'Imagery Â© <a href="https://www.mapbox.com/">Mapbox</a>',
     mbUrl = 'https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=' + mapboxAccessToken + '';
 
 var grayscale = L.tileLayer(mbUrl, {

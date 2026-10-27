@@ -84,13 +84,6 @@ def safe_redirect(request):
 from django.shortcuts import render
 
 def custom_csrf_failure(request, reason=""):
-    accepts_json = "application/json" in request.headers.get("Accept", "").lower()
-    is_ajax = request.headers.get("X-Requested-With", "").lower() == "xmlhttprequest"
-    if accepts_json or is_ajax:
-        return JsonResponse(
-            {"success": False, "message": "Request could not be verified."},
-            status=403,
-        )
     return redirect("exam:entrepreneur_userlogin")
     
 @ratelimit(key="ip", rate="5/m", method="POST", block=True)
@@ -178,15 +171,15 @@ def login_view(request):
                 ip_address = get_client_ip(request)  # Get the client's IP address
 
                 if ip_address:  # Ensure we have a valid IP address
-                    FailedLoginAttempt.objects.create(user=None, ip_address=ip_address)
+                    form.add_error(None, "Invalid username or password.")
+                    return render(request, "web/registration/login.html", {"form": form, "error": "Invalid username or password."})
                 else:
                     messages.error(request, "Could not record login attempt due to missing IP address.")
-
-                return render(
-                    request,
-                    "web/registration/login.html",
-                    {"form": form, "error": "Invalid credentials or CAPTCHA."}, 
-                )
+                    return render(
+                        request,
+                        "web/registration/login.html",
+                        {"form": form, "error": "Invalid credentials or CAPTCHA."}, 
+                    )
         else:
             return render(
                 request,
@@ -199,6 +192,7 @@ def login_view(request):
         for cookies in request.COOKIES:
             response.delete_cookie(cookies)
         return response
+
 
 # class CustomLoginView(LoginView):
 #     def form_valid(self, form):
@@ -332,7 +326,7 @@ def contact(request):
         # reCAPTCHA validation
         recaptcha_response = request.POST.get("g-recaptcha-response")
         data = {
-            "secret": "6LfhACgqAAAAAFqwP-iG32CZyREH66J6u43F-I8D",
+            "secret": settings.RECAPTCHA_SECRET_KEY,
             "response": recaptcha_response,
         }
         r = requests.post("https://www.google.com/recaptcha/api/siteverify", data=data)
@@ -537,7 +531,7 @@ class AddHeadOfficeView(AdminOrHeadOfficeRequiredMixin, CreateView):
 
         # Send email using Brevo API
         configuration = sib_api_v3_sdk.Configuration()
-        configuration.api_key["api-key"] = settings.SENDINBLUE_API_KEY
+        configuration.api_key["api-key"] = settings.BREVO_API_KEY
         api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
             sib_api_v3_sdk.ApiClient(configuration)
         )
@@ -808,7 +802,7 @@ class AddCentreUserAdminView(CreateView):
 
         # Send the email via Brevo API
         configuration = sib_api_v3_sdk.Configuration()
-        configuration.api_key["api-key"] = settings.SENDINBLUE_API_KEY
+        configuration.api_key["api-key"] = settings.BREVO_API_KEY
         api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
             sib_api_v3_sdk.ApiClient(configuration)
         )
@@ -5482,3 +5476,25 @@ def main_certificate(request):
     centre_user = CentreUserAccount.objects.filter(user=user).first()
     current_user = MainCertificatePayment.objects.filter(user=centre_user).first()
     return render(request, 'web/franchise/main_certificate.html', {'current_user': current_user, 'temp_user': temp_user})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
