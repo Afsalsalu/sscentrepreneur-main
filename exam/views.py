@@ -38,6 +38,7 @@ from .models.user_registration import MainExamRegistration
 # Custom imports for user forms and email utilities
 from web.forms import CentreUserForm
 from web.models import CentreUserAccount
+from integrations.services import sync_qualified_user
 
 from .constants import PaymentStatus
 # Django imports for models, forms, and utility functions
@@ -843,78 +844,54 @@ def main_exam(request):
                     messages.error(request, f'erajhjhfasdfjhaf: {e}')
                 if passed_user:
                     temp_user.main_exam_passed = True
-                    temp_user.save()
+                    temp_user.save(update_fields=["main_exam_passed"])
                     main_reg.is_mail_send = True
                     main_reg.is_passed = True
-                    main_reg.save()
+                    main_reg.save(update_fields=["is_mail_send", "is_passed"])
                     new_username = generate_main_username()
                     user.username = new_username
-                    user.save()
+                    user.save(update_fields=["username"])
 
-                    try:
-                        import time
-                        map_embed_url = f"https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d246.6561038260911!2d{temp_user.longitude}!3d{temp_user.lattitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2s{temp_user.lattitude},{temp_user.longitude}!5e0!3m2!1sen!2sin!4v{int(time.time())}!5m2!1sen!2sin"
-                        centre_user = CentreUserAccount.objects.create(user=user, 
-                                                         username=new_username, 
-                                                         owner_centre=temp_user.name,
-                                                         mobile=temp_user.mobile, 
-                                                         photo=temp_user.photo, 
-                                                         aadhaar_number=temp_user.aadhaar_number,
-                                                         email=temp_user.email, 
-                                                         state=temp_user.state,
-                                                         district=temp_user.district,
-                                                         rural_areas=temp_user.local_body, 
-                                                         ward_number=temp_user.ward_number, 
-                                                         centre_phone_number=temp_user.mobile,
-                                                         pan_card_number='-',
-                                                         is_olduser=False,
-                                                         centre_name = 'None',
-                                                         centre_email = 'None@n.com',
-                                                         another_name = temp_user.another_name,
-                                                         centre_owner_address = temp_user.address,
-                                                         is_approved=False                                                         )
-                        centre_user.save()
-                        main_email_send(centre_user)
+                    location = ""
+                    if temp_user.lattitude is not None and temp_user.longitude is not None:
+                        location = f"{temp_user.lattitude},{temp_user.longitude}"
+                    centre_user, _ = CentreUserAccount.objects.get_or_create(
+                        user=user,
+                        defaults={
+                            "username": new_username,
+                            "owner_centre": temp_user.name,
+                            "mobile": temp_user.mobile,
+                            "photo": temp_user.photo,
+                            "aadhaar_number": temp_user.aadhaar_number,
+                            "email": temp_user.email,
+                            "state": temp_user.state,
+                            "district": temp_user.district,
+                            "rural_areas": temp_user.local_body,
+                            "ward_number": temp_user.ward_number,
+                            "centre_phone_number": temp_user.mobile,
+                            "pan_card_number": "-",
+                            "is_olduser": False,
+                            "centre_name": temp_user.panchayat or "None",
+                            "centre_email": temp_user.email,
+                            "another_name": temp_user.another_name,
+                            "centre_owner_address": temp_user.address,
+                            "location": location or temp_user.address or "",
+                            "is_approved": False,
+                        },
+                    )
+                    if centre_user.username != new_username:
+                        centre_user.username = new_username
+                        centre_user.save(update_fields=["username"])
+                    main_email_send(centre_user)
 
-                        try:
-                            a_user = User(
-                                username=new_username,
-                                email=temp_user.email,
-                                usertype='centre',  # custom field
-                                is_active=True
-                            )
-                            a_user.set_password(temp_user.mobile)
-                            a_user.save()
-
-                            CentreUserAccount.objects.create(
-                                user=a_user,
-                                username=new_username,
-                                owner_centre=temp_user.name,
-                                mobile=temp_user.mobile,
-                                photo=temp_user.photo,
-                                aadhaar_number=temp_user.aadhaar_number,
-                                email=temp_user.email,
-                                state=temp_user.state,
-                                district=temp_user.district,
-                                rural_areas=temp_user.local_body,
-                                ward_number=int(temp_user.ward_number),
-                                centre_phone_number=temp_user.mobile,
-                                pan_card_number='-',
-                                is_olduser=False,
-                                centre_name='None',
-                                centre_email='None@n.com',
-                                another_name=temp_user.another_name,
-                                centre_owner_address=temp_user.address,
-                                is_approved=False
-                            )
-                        except Exception as e:
-                            messages.error(e)
-
-
-                        messages.success(request, 'successsss')
-                    except Exception as e:
-                        messages.error(request, f'error creating table{e}')
-                        print(e)
+                    sync_result = sync_qualified_user(temp_user)
+                    if sync_result.success:
+                        messages.success(request, "Final exam passed and centre access synchronized.")
+                    else:
+                        messages.warning(
+                            request,
+                            "Final exam passed. Centre access sync is queued for retry.",
+                        )
                     return render(request, "web/exam/mainexam_congratulations.html", {"score": score_percentage})
             except Exception as e:
                 messages.error(request, f'error: {e}')

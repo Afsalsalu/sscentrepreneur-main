@@ -1,5 +1,5 @@
 # exam/admin/user_registration_admin.py
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.urls import NoReverseMatch, reverse
 from django.utils.html import format_html
 
@@ -287,7 +287,11 @@ class TemporaryUserAdmin(admin.ModelAdmin):
         ("Payment & Certificate", {"fields": ("payment", "certificate_paid", "certificate_downloaded")} ),
         ("Other Information", {"fields": ("registration_date", )}),
     )
-    actions = ["mark_certificate_paid", "mark_certificate_unpaid"]
+    actions = [
+        "mark_certificate_paid",
+        "mark_certificate_unpaid",
+        "sync_qualified_users_to_sscegov",
+    ]
 
     def mark_certificate_paid(self, request, queryset):
         queryset.update(certificate_paid=True)
@@ -296,6 +300,28 @@ class TemporaryUserAdmin(admin.ModelAdmin):
     def mark_certificate_unpaid(self, request, queryset):
         queryset.update(certificate_paid=False)
     mark_certificate_unpaid.short_description = "Mark selected registrations as Unpaid"
+
+    def sync_qualified_users_to_sscegov(self, request, queryset):
+        from integrations.services import get_or_create_sync, sync_qualified_user
+
+        succeeded = failed = rejected = 0
+        for candidate in queryset.select_related("user"):
+            sync_record, _ = get_or_create_sync(candidate)
+            result = sync_qualified_user(sync_record)
+            if result.success:
+                succeeded += 1
+            elif result.status == "rejected":
+                rejected += 1
+            else:
+                failed += 1
+        self.message_user(
+            request,
+            f"Sync complete: {succeeded} succeeded, {failed} failed, {rejected} rejected.",
+            messages.SUCCESS if not failed else messages.WARNING,
+        )
+    sync_qualified_users_to_sscegov.short_description = (
+        "Sync selected qualified users to sscegov.com"
+    )
 
     def certificate_paid_status(self, obj):
         return format_html('<span style="color: {};"><b>{}</b></span>', "green" if obj.certificate_paid else "red", "Paid" if obj.certificate_paid else "Not Paid")

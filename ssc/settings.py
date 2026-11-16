@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     "captcha",
     "exam", 
+    "integrations",
     # "axes",
     # 'csp',
     # 'compressor',
@@ -274,6 +275,15 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 
 CSRF_FAILURE_VIEW = 'web.views.custom_csrf_failure'
+
+# Private sscentrepreneur.com -> sscegov.com integration. Keep these values in
+# the environment; never commit production credentials.
+SSCEGOV_SYNC_ENDPOINT = config(
+    "SSCEGOV_SYNC_ENDPOINT",
+    default="https://sscegov.com/api/integrations/sscentrepreneur/exam-qualified-user/",
+)
+SSCEGOV_SYNC_API_KEY = config("SSCEGOV_SYNC_API_KEY", default="")
+SSCEGOV_SYNC_HMAC_SECRET = config("SSCEGOV_SYNC_HMAC_SECRET", default="")
 
 
 
