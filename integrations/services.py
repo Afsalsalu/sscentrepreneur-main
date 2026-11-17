@@ -11,6 +11,7 @@ from django.utils import timezone
 
 from exam.models import MainExamProgress
 from exam.models.user_registration import TemporaryUser
+from web.models import CentreUserAccount
 
 
 class NotQualifiedError(ValueError):
@@ -32,7 +33,31 @@ def _normalise_mobile(value):
     return digits
 
 
-def build_qualified_user_payload(candidate: TemporaryUser):
+def _resolve_sync_sources(source):
+    """Return the registration candidate and optional source centre account.
+
+    Final-exam completion creates the ``CentreUserAccount`` that is sent to
+    SSCEGOV.  The original payload is built from the related ``TemporaryUser``
+    because that record contains the exam-registration fields.  Supporting
+    both objects keeps the existing service API compatible while allowing the
+    trigger and management command to use the exact persisted centre account.
+    """
+    if isinstance(source, CentreUserAccount):
+        candidate = (
+            TemporaryUser.objects.filter(user=source.user)
+            .order_by('-id')
+            .first()
+        )
+        if candidate is None:
+            raise NotQualifiedError(
+                'Centre account has no matching exam registration candidate'
+            )
+        return candidate, source
+    return source, None
+
+
+def build_qualified_user_payload(source):
+    candidate, centre_user = _resolve_sync_sources(source)
     source_user = candidate.user
     if source_user is None:
         raise NotQualifiedError('Candidate has no source authentication user')
@@ -60,18 +85,25 @@ def build_qualified_user_payload(candidate: TemporaryUser):
             password_hash = source_user.password
         except (ValueError, TypeError):
             password_hash = None
+    full_name = (candidate.name or '').strip()
+    if not full_name and centre_user is not None:
+        full_name = (centre_user.owner_centre or '').strip()
+    username = (source_user.username or '').strip()
+    if centre_user is not None and centre_user.username:
+        username = centre_user.username.strip()
+
     return {
         'schema_version': 1,
         'source_system': 'sscentrepreneur',
         'source_user_id': source_user.pk,
         'source_candidate_id': candidate.pk,
-        'full_name': (candidate.name or '').strip(),
-        'username': (source_user.username or '').strip(),
+        'full_name': full_name,
+        'username': username,
         'email': email,
         'mobile': mobile,
         'address': candidate.address or '',
         'centre': {
-            'owner_name': (candidate.name or '').strip(),
+            'owner_name': full_name,
             'name': candidate.panchayat or '',
             'state': candidate.state or '',
             'district': candidate.district or '',
@@ -89,9 +121,9 @@ def build_qualified_user_payload(candidate: TemporaryUser):
     }
 
 
-def sync_qualified_user(candidate: TemporaryUser):
+def sync_qualified_user(source):
     try:
-        payload = build_qualified_user_payload(candidate)
+        payload = build_qualified_user_payload(source)
     except NotQualifiedError as exc:
         return SyncResult(False, 'rejected', str(exc))
 
@@ -126,7 +158,9 @@ def sync_qualified_user(candidate: TemporaryUser):
         'X-SSCEGOV-API-Key': api_key,
         'X-SSCEGOV-Timestamp': timestamp,
         'X-SSCEGOV-Signature': signature,
-        'X-SSCEGOV-Idempotency-Key': f'sscentrepreneur:final-exam:{candidate.pk}',
+        'X-SSCEGOV-Idempotency-Key': (
+            f'sscentrepreneur:final-exam:{payload["source_candidate_id"]}'
+        ),
     }
     try:
         response = requests.post(

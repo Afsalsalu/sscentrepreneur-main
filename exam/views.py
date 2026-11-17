@@ -1,5 +1,6 @@
 # Django imports for views, request handling, and authentication
 import json
+import logging
 import random
 import string
 import uuid
@@ -17,7 +18,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 # from easy_pdf.views import PDFView
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -49,6 +50,49 @@ from .models import (ExamCategory, MainExamOption, MainExamProgress,
 
 
 
+
+
+logger = logging.getLogger(__name__)
+
+
+def _sync_qualified_user_after_commit(centre_user_id):
+    """Sync a committed centre account without affecting exam completion."""
+    try:
+        centre_user = CentreUserAccount.objects.select_related('user').get(
+            pk=centre_user_id
+        )
+        sync_result = sync_qualified_user(centre_user)
+        if not sync_result.success:
+            logger.error(
+                "SSCEGOV qualified-user sync failed for CentreUserAccount "
+                "id=%s username=%s status=%s: %s",
+                centre_user.pk,
+                centre_user.username,
+                sync_result.status,
+                sync_result.message,
+            )
+        else:
+            logger.info(
+                "SSCEGOV qualified-user sync succeeded for CentreUserAccount "
+                "id=%s username=%s",
+                centre_user.pk,
+                centre_user.username,
+            )
+    except Exception:
+        logger.exception(
+            "SSCEGOV qualified-user sync raised an error for CentreUserAccount "
+            "id=%s",
+            centre_user_id,
+        )
+
+
+def _queue_qualified_user_sync(centre_user):
+    """Queue sync for the exact persisted account after its transaction commits."""
+    transaction.on_commit(
+        lambda centre_user_id=centre_user.pk: _sync_qualified_user_after_commit(
+            centre_user_id
+        )
+    )
 
 
 class UserRegistrationMixin:
@@ -821,81 +865,94 @@ def main_exam(request):
             messages.error(request, "Your exam attempt has been failed due to malpractice.")
             return redirect("exam:dashboard")
 
-        # Save exam progress
-        MainExamProgress.objects.create(
-            user=user,
-            attempt_number=attempt_number,
-            correct_answers=correct_answers_count,
-            total_questions=total_questions,
-            status="Passed" if passed else f"Failed Attempt {attempt_number}",
-            completed_at=timezone.now(),
-        )
-
-        request.session.pop("exam_questions", None)
-
         if passed:
             user = request.user
             try:
-                passed_user = MainExamProgress.objects.filter(user=request.user, status='Passed').exists()
-                temp_user = get_object_or_404(TemporaryUser, user=user)
-                try:
-                    main_reg = MainExamRegistration.objects.get(user=user)
-                except Exception as e:
-                    messages.error(request, f'erajhjhfasdfjhaf: {e}')
-                if passed_user:
-                    temp_user.main_exam_passed = True
-                    temp_user.save(update_fields=["main_exam_passed"])
-                    main_reg.is_mail_send = True
-                    main_reg.is_passed = True
-                    main_reg.save(update_fields=["is_mail_send", "is_passed"])
-                    new_username = generate_main_username()
-                    user.username = new_username
-                    user.save(update_fields=["username"])
-
-                    location = ""
-                    if temp_user.lattitude is not None and temp_user.longitude is not None:
-                        location = f"{temp_user.lattitude},{temp_user.longitude}"
-                    centre_user, _ = CentreUserAccount.objects.get_or_create(
+                with transaction.atomic():
+                    # Save the pass result and source account in one transaction.
+                    MainExamProgress.objects.create(
                         user=user,
-                        defaults={
-                            "username": new_username,
-                            "owner_centre": temp_user.name,
-                            "mobile": temp_user.mobile,
-                            "photo": temp_user.photo,
-                            "aadhaar_number": temp_user.aadhaar_number,
-                            "email": temp_user.email,
-                            "state": temp_user.state,
-                            "district": temp_user.district,
-                            "rural_areas": temp_user.local_body,
-                            "ward_number": temp_user.ward_number,
-                            "centre_phone_number": temp_user.mobile,
-                            "pan_card_number": "-",
-                            "is_olduser": False,
-                            "centre_name": temp_user.panchayat or "None",
-                            "centre_email": temp_user.email,
-                            "another_name": temp_user.another_name,
-                            "centre_owner_address": temp_user.address,
-                            "location": location or temp_user.address or "",
-                            "is_approved": False,
-                        },
+                        attempt_number=attempt_number,
+                        correct_answers=correct_answers_count,
+                        total_questions=total_questions,
+                        status="Passed",
+                        completed_at=timezone.now(),
                     )
-                    if centre_user.username != new_username:
-                        centre_user.username = new_username
-                        centre_user.save(update_fields=["username"])
-                    main_email_send(centre_user)
+                    request.session.pop("exam_questions", None)
 
-                    sync_result = sync_qualified_user(temp_user)
-                    if sync_result.success:
-                        messages.success(request, "Final exam passed and centre access synchronized.")
-                    else:
-                        messages.warning(
-                            request,
-                            "Final exam passed. Centre access sync is queued for retry.",
+                    passed_user = MainExamProgress.objects.filter(
+                        user=request.user, status='Passed'
+                    ).exists()
+                    temp_user = get_object_or_404(TemporaryUser, user=user)
+                    try:
+                        main_reg = MainExamRegistration.objects.get(user=user)
+                    except Exception as e:
+                        messages.error(request, f'erajhjhfasdfjhaf: {e}')
+                    if passed_user:
+                        temp_user.main_exam_passed = True
+                        temp_user.save(update_fields=["main_exam_passed"])
+                        main_reg.is_mail_send = True
+                        main_reg.is_passed = True
+                        main_reg.save(update_fields=["is_mail_send", "is_passed"])
+                        new_username = generate_main_username()
+                        user.username = new_username
+                        user.save(update_fields=["username"])
+
+                        location = ""
+                        if temp_user.lattitude is not None and temp_user.longitude is not None:
+                            location = f"{temp_user.lattitude},{temp_user.longitude}"
+                        centre_user, _ = CentreUserAccount.objects.get_or_create(
+                            user=user,
+                            defaults={
+                                "username": new_username,
+                                "owner_centre": temp_user.name,
+                                "mobile": temp_user.mobile,
+                                "photo": temp_user.photo,
+                                "aadhaar_number": temp_user.aadhaar_number,
+                                "email": temp_user.email,
+                                "state": temp_user.state,
+                                "district": temp_user.district,
+                                "rural_areas": temp_user.local_body,
+                                "ward_number": temp_user.ward_number,
+                                "centre_phone_number": temp_user.mobile,
+                                "pan_card_number": "-",
+                                "is_olduser": False,
+                                "centre_name": temp_user.panchayat or "None",
+                                "centre_email": temp_user.email,
+                                "another_name": temp_user.another_name,
+                                "centre_owner_address": temp_user.address,
+                                "location": location or temp_user.address or "",
+                                "is_approved": False,
+                            },
                         )
-                    return render(request, "web/exam/mainexam_congratulations.html", {"score": score_percentage})
+                        if centre_user.username != new_username:
+                            centre_user.username = new_username
+                            centre_user.save(update_fields=["username"])
+
+                        # The callback receives the exact CentreUserAccount and
+                        # runs only after the exam/account transaction commits.
+                        _queue_qualified_user_sync(centre_user)
+                        main_email_send(centre_user)
+
+                    messages.success(request, "Final exam passed successfully.")
+                return render(
+                    request,
+                    "web/exam/mainexam_congratulations.html",
+                    {"score": score_percentage},
+                )
             except Exception as e:
+                logger.exception("Final exam pass/account creation failed for user %s", user.pk)
                 messages.error(request, f'error: {e}')
         else:
+            MainExamProgress.objects.create(
+                user=user,
+                attempt_number=attempt_number,
+                correct_answers=correct_answers_count,
+                total_questions=total_questions,
+                status=f"Failed Attempt {attempt_number}",
+                completed_at=timezone.now(),
+            )
+            request.session.pop("exam_questions", None)
             remaining_attempts = MAX_ATTEMPTS - attempt_number
             if remaining_attempts > 0:
                 messages.warning(request, f"You scored {score_percentage:.2f}%. {remaining_attempts} attempts left.")
