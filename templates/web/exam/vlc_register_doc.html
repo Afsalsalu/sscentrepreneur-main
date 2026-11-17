@@ -4,235 +4,558 @@
 
 {% block content %}
 
-<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-<script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
-
 <style>
-    body {
-        font-family: 'Poppins', sans-serif;
-        background-color: #f8f9fa;
-        /* padding: 2rem; */
+    .registration-doc-page,
+    .registration-doc-page * {
+        box-sizing: border-box;
     }
 
-    .container {
-        max-width: 100%;
-        margin: auto;
-        background: #ffffff;
-        padding: 2rem;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    .registration-doc-page {
+        --registration-navy: #123b78;
+        --registration-navy-dark: #0d2f63;
+        --registration-orange: #f39a19;
+        --registration-divider: #dce5f0;
+        --registration-soft-blue: #f2f6fb;
+        --registration-green: #20a548;
+        min-height: calc(100vh - 80px);
+        padding: clamp(2.5rem, 6vw, 5.5rem) 1rem;
+        background: #f5f8fc;
+        color: #17284c;
+        font-family: inherit;
     }
 
-    .header {
-        font-size: 26px;
+    .registration-doc-shell {
+        width: min(100%, 880px);
+        margin: 0 auto;
+        padding: clamp(2rem, 5vw, 3.5rem);
+        background: #fff;
+        border: 1px solid rgba(220, 229, 240, 0.9);
+        border-radius: 12px;
+        box-shadow: 0 18px 50px rgba(24, 55, 100, 0.08);
+    }
+
+    .registration-doc-heading {
+        display: flex;
+        align-items: flex-start;
+        gap: 1.35rem;
+        margin-bottom: 2.25rem;
+    }
+
+    .registration-doc-heading__accent {
+        flex: 0 0 8px;
+        width: 8px;
+        min-height: 3.55rem;
+        margin-top: 0.35rem;
+        border-radius: 1px;
+        background: var(--registration-orange);
+    }
+
+    .registration-doc-heading h1 {
+        margin: 0;
+        color: var(--registration-navy);
+        font-size: clamp(2rem, 4.5vw, 2.8rem);
+        font-weight: 700;
+        line-height: 1.12;
+        letter-spacing: -0.025em;
+    }
+
+    .registration-doc-heading p {
+        max-width: 690px;
+        margin: 0.65rem 0 0;
+        color: #52617c;
+        font-size: 1rem;
+        line-height: 1.65;
+    }
+
+    .registration-doc-requirements {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .registration-doc-requirement {
+        display: grid;
+        grid-template-columns: 2.75rem minmax(0, 1fr) 1.9rem;
+        align-items: center;
+        gap: 1.1rem;
+        min-height: 4.35rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--registration-divider);
+    }
+
+    .registration-doc-requirement:first-child {
+        border-top: 1px solid var(--registration-divider);
+    }
+
+    .registration-doc-requirement__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        color: var(--registration-navy);
+        font-size: 1.55rem;
+    }
+
+    .registration-doc-requirement__text {
+        color: #172b5d;
+        font-size: 1.05rem;
         font-weight: 600;
-        margin-bottom: 15px;
-        color: #333;
-        text-align: center;
+        line-height: 1.45;
     }
 
-    .checklist {
-        border-left: 4px solid #455EB5;
-        padding-left: 15px;
-        margin-bottom: 20px;
+    .registration-doc-requirement__check {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.95rem;
+        height: 1.95rem;
+        border-radius: 50%;
+        background: #e0f8e5;
+        color: var(--registration-green);
+        font-size: 1rem;
     }
 
-    .checklist li {
+    .registration-doc-note {
+        margin: 1rem 0 0;
+        color: #68758d;
+        font-size: 0.86rem;
+        line-height: 1.65;
+    }
+
+    .registration-doc-policies {
+        margin-top: 2.35rem;
+    }
+
+    .registration-doc-policy {
+        border-top: 1px solid var(--registration-divider);
+    }
+
+    .registration-doc-policy:last-child {
+        border-bottom: 1px solid var(--registration-divider);
+    }
+
+    .registration-doc-policy__trigger {
         display: flex;
         align-items: center;
-        font-size: 16px;
-        margin-bottom: 10px;
+        width: 100%;
+        gap: 1rem;
+        padding: 1.1rem 0;
+        border: 0;
+        background: transparent;
+        color: var(--registration-navy);
+        font: inherit;
+        font-size: 1.1rem;
+        font-weight: 700;
+        text-align: left;
+        cursor: pointer;
+        transition: background-color 160ms ease, color 160ms ease;
     }
 
-    .checklist i {
-        margin-right: 10px;
-        color: #1f8027;
+    .registration-doc-policy__trigger:hover {
+        color: var(--registration-navy-dark);
+        background: #f8fbff;
     }
 
-    .terms {
-        background: #eef2ff;
-        padding: 15px;
-        border-radius: 8px;
-        margin-top: 20px;
-        font-size: 14px;
-        color: #555;
+    .registration-doc-policy__trigger:focus-visible,
+    .registration-doc-agreement input:focus-visible,
+    .registration-doc-button:focus-visible {
+        outline: 3px solid rgba(243, 154, 25, 0.55);
+        outline-offset: 3px;
     }
 
-    .checkbox-container {
+    .registration-doc-policy__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.2rem;
+        color: var(--registration-navy);
+        font-size: 1.35rem;
+    }
+
+    .registration-doc-policy__title {
+        flex: 1;
+    }
+
+    .registration-doc-policy__chevron {
+        margin-left: auto;
+        font-size: 1rem;
+        transition: transform 220ms ease;
+    }
+
+    .registration-doc-policy__panel {
+        display: grid;
+        grid-template-rows: 0fr;
+        background: var(--registration-soft-blue);
+        transition: grid-template-rows 240ms ease;
+    }
+
+    .registration-doc-policy__panel[aria-hidden="false"] {
+        grid-template-rows: 1fr;
+    }
+
+    .registration-doc-policy__panel-inner {
+        min-height: 0;
+        overflow: hidden;
+        padding: 0 1rem;
+        color: #34415e;
+        font-size: 0.95rem;
+        line-height: 1.75;
+        transition: padding 240ms ease;
+    }
+
+    .registration-doc-policy__panel[aria-hidden="false"] .registration-doc-policy__panel-inner {
+        padding: 1rem 1rem 1.35rem;
+    }
+
+    .registration-doc-policy__panel-inner p {
+        margin: 0 0 1rem;
+    }
+
+    .registration-doc-policy__panel-inner p:last-child {
+        margin-bottom: 0;
+    }
+
+    .registration-doc-policy__panel-inner ul {
+        margin: 0;
+        padding-left: 1.25rem;
+    }
+
+    .registration-doc-policy__panel-inner li + li {
+        margin-top: 0.65rem;
+    }
+
+    .registration-doc-policy__panel-inner h3 {
+        margin: 1.15rem 0 0.5rem;
+        color: var(--registration-navy);
+        font-size: 1rem;
+    }
+
+    .registration-doc-actions {
         display: flex;
         align-items: center;
-        margin-top: 20px;
-        font-size: 16px;
-        color: #333;
-        background: #eef2ff;
-        padding: 10px;
-        border-radius: 8px;
+        justify-content: space-between;
+        gap: 1.5rem;
+        margin-top: 2.35rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--registration-divider);
+    }
+
+    .registration-doc-agreement {
+        display: inline-flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        color: #29344c;
+        font-size: 1rem;
+        line-height: 1.5;
         cursor: pointer;
     }
 
-    .checkbox-container input {
-        margin-right: 10px;
+    .registration-doc-agreement input {
+        flex: 0 0 auto;
+        width: 1.35rem;
+        height: 1.35rem;
+        margin: 0.12rem 0 0;
+        accent-color: var(--registration-navy);
         cursor: pointer;
     }
 
-    .button-container {
-        text-align: center;
-        margin-top: 20px;
+    .registration-doc-button-link {
+        flex: 0 0 auto;
     }
 
-    .button-36 {
-        background: linear-gradient(92.88deg, #455EB5 9.16%, #5643CC 43.89%, #673FD7 64.72%);
-        border-radius: 8px;
-        border: none;
-        color: #ffffff;
-        font-size: 16px;
-        font-weight: 500;
-        padding: 12px 24px;
-        cursor: not-allowed;
-        transition: all 0.3s;
-        opacity: 0.5;
-    }
-
-    .button-36:enabled {
-        opacity: 1;
-        cursor: pointer;
-    }
-
-
-    .container2 {
-        max-width: 100%;
-        /* margin: auto; */
-        background: #ffffff;
-        padding: 2rem;
+    .registration-doc-button {
+        min-width: 210px;
+        padding: 0.9rem 2.5rem;
+        border: 0;
         border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        height: fit-content;
+        background: var(--registration-navy);
+        color: #fff;
+        font: inherit;
+        font-size: 1.05rem;
+        font-weight: 700;
+        line-height: 1.3;
+        cursor: pointer;
+        transition: background-color 160ms ease, transform 160ms ease, opacity 160ms ease;
     }
 
+    .registration-doc-button:hover:enabled {
+        background: var(--registration-navy-dark);
+        transform: translateY(-1px);
+    }
+
+    .registration-doc-button:disabled {
+        background: #b8c5d7;
+        cursor: not-allowed;
+        opacity: 0.85;
+    }
+
+    .registration-doc-page .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    @media (max-width: 640px) {
+        .registration-doc-page {
+            padding: 1.25rem 0.75rem 2.5rem;
+        }
+
+        .registration-doc-shell {
+            padding: 1.5rem 1rem 1.75rem;
+            border-radius: 10px;
+        }
+
+        .registration-doc-heading {
+            gap: 0.85rem;
+            margin-bottom: 1.6rem;
+        }
+
+        .registration-doc-heading__accent {
+            flex-basis: 6px;
+            width: 6px;
+            min-height: 2.9rem;
+        }
+
+        .registration-doc-heading h1 {
+            font-size: 1.85rem;
+        }
+
+        .registration-doc-heading p {
+            font-size: 0.92rem;
+        }
+
+        .registration-doc-requirement {
+            grid-template-columns: 2.2rem minmax(0, 1fr) 1.7rem;
+            gap: 0.75rem;
+            min-height: 4rem;
+        }
+
+        .registration-doc-requirement__icon {
+            width: 2.1rem;
+            height: 2.1rem;
+            font-size: 1.35rem;
+        }
+
+        .registration-doc-requirement__text {
+            font-size: 0.95rem;
+        }
+
+        .registration-doc-requirement__check {
+            width: 1.7rem;
+            height: 1.7rem;
+            font-size: 0.85rem;
+        }
+
+        .registration-doc-actions {
+            align-items: stretch;
+            flex-direction: column;
+            gap: 1.1rem;
+        }
+
+        .registration-doc-agreement,
+        .registration-doc-button-link,
+        .registration-doc-button {
+            width: 100%;
+        }
+
+        .registration-doc-button {
+            min-width: 0;
+        }
+    }
 </style>
-<h4 class="py-5"></h4>
 
-<div style="display: flex; gap: 20px;">
+<main class="registration-doc-page" aria-labelledby="registration-requirements-title">
+    <section class="registration-doc-shell">
+        <header class="registration-doc-heading">
+            <span class="registration-doc-heading__accent" aria-hidden="true"></span>
+            <div>
+                <h1 id="registration-requirements-title">Registration Requirements</h1>
+                <p>Keep your documents ready and review the policies below to ensure a smooth registration.</p>
+            </div>
+        </header>
 
-
-<div>
-    <div class="container">
-        <h2 class="header">Registration Requirements</h2>
-        
-        <ul class="checklist">
-            <li><i class='bx bx-check-circle'></i> Valid Aadhaar and PAN card (will be authenticated during registration).</li>
-            <li><i class='bx bx-check-circle'></i> Copies of the following documents:</li>
+        <ul class="registration-doc-requirements" aria-label="Registration document requirements">
+            <li class="registration-doc-requirement">
+                <span class="registration-doc-requirement__icon" aria-hidden="true"><i class="fa fa-id-card-o"></i></span>
+                <span class="registration-doc-requirement__text">Valid Aadhaar and PAN card (will be authenticated during registration).</span>
+                <span class="registration-doc-requirement__check" aria-label="Required"><i class="fa fa-check" aria-hidden="true"></i></span>
+            </li>
+            <li class="registration-doc-requirement">
+                <span class="registration-doc-requirement__icon" aria-hidden="true"><i class="fa fa-id-card-o"></i></span>
+                <span class="registration-doc-requirement__text">Aadhaar card — Front and Back side</span>
+                <span class="registration-doc-requirement__check" aria-label="Required"><i class="fa fa-check" aria-hidden="true"></i></span>
+            </li>
+            <li class="registration-doc-requirement">
+                <span class="registration-doc-requirement__icon" aria-hidden="true"><i class="fa fa-credit-card"></i></span>
+                <span class="registration-doc-requirement__text">PAN Card</span>
+                <span class="registration-doc-requirement__check" aria-label="Required"><i class="fa fa-check" aria-hidden="true"></i></span>
+            </li>
+            <li class="registration-doc-requirement">
+                <span class="registration-doc-requirement__icon" aria-hidden="true"><i class="fa fa-user-o"></i></span>
+                <span class="registration-doc-requirement__text">Applicant’s Photo</span>
+                <span class="registration-doc-requirement__check" aria-label="Required"><i class="fa fa-check" aria-hidden="true"></i></span>
+            </li>
+            <li class="registration-doc-requirement">
+                <span class="registration-doc-requirement__icon" aria-hidden="true"><i class="fa fa-graduation-cap"></i></span>
+                <span class="registration-doc-requirement__text">Highest Qualification Document</span>
+                <span class="registration-doc-requirement__check" aria-label="Required"><i class="fa fa-check" aria-hidden="true"></i></span>
+            </li>
+            <li class="registration-doc-requirement">
+                <span class="registration-doc-requirement__icon" aria-hidden="true"><i class="fa fa-map-marker"></i></span>
+                <span class="registration-doc-requirement__text">The SSC centre should be accessible.</span>
+                <span class="registration-doc-requirement__check" aria-label="Required"><i class="fa fa-check" aria-hidden="true"></i></span>
+            </li>
         </ul>
-        
-        <ul class="checklist">
-            <li><i class='bx bxs-right-arrow' style='color:#6185d9'></i>Aadhar card (Front and Back side)</li>
-            <li><i class='bx bxs-right-arrow' style='color:#6185d9'></i> PAN Card</li>
-            <li><i class='bx bxs-right-arrow' style='color:#6185d9'></i>Applicant's Photo</li>
-            <li><i class='bx bxs-right-arrow' style='color:#6185d9'></i>Highest Qualification Document</li>        
-        </ul>
-    
-    
-        <ul class="checklist">
-            <li><i class='bx bx-check-circle'></i>Refer to
-               <a href="http://sscentrepreneur.com/exam/login"></a>  for more details.</li>
-                            <li><i class='bx bx-check-circle'></i>*Only
-                    .jpg/.png/.pdf file types are accepted, and the file should be less than 80 KB in size.</li>
-                    <li><i class='bx bx-check-circle'></i>The SSC centre
-                        should be accessible.</li>
-        </ul>
-    
-        <div class="terms">
-            <strong>Terms & Conditions:</strong> <br>This Terms and Conditions agreement (the "Agreement") is a legal contract between
-            you (the User) and SSC E-Governance Services India Limited (SSC). By accessing or
-            using our services, you agree to comply with the terms outlined below. <br><br>
-            <ul class="checklist">
-                <li><i class='bx bxs-right-arrow' style='color:#000'></i>This Terms and Conditions
-                    agreement (the Agreement) is a legal contract between you (the User) and SSC
-                    E-Governance Services Limited (SSC). By accessing or using our services, you
-                    agree to comply with the terms outlined below. SSC reserves the right to modify,
-                    add, or remove portions of these Terms and Conditions at any time without prior
-                    notice. Users are encouraged to periodically review this section to stay updated on
-                    any changes. You also declare that the information provided in the form is accurate and complete
-                    to the best of your knowledge and accept full legal responsibility for any
-                    discrepancies or inaccuracies. By accepting these Terms and Conditions, you confirm
-                    your agreement with the policies outlined above.</li>
-            </ul>
-        </div>
 
-        <div class="terms">
-            <strong>Privacy Policy:</strong> <br>This Privacy Policy describes how SSC E-Governance Services India Limited ("SSC", "we", "us", or "our") collects, uses, and protects your information when you access or use our services. By using our services, you agree to the collection and use of information in accordance with this policy.<br><br>
-            <ul class="checklist">
-                <li><i class='bx bxs-right-arrow' style='color:#000'></i><strong>Information Collection:</strong> We may collect personal information, including but not limited to your name, contact details, Aadhaar UID/VID, as part of our service authentication process.</li>
-                <li><i class='bx bxs-right-arrow' style='color:#000'></i><strong>Use of Information:</strong> The information collected will be used solely for the purpose of providing, improving, and securing our services. We will not share your data with third parties without your consent, except as required by law.</li>
-                <li><i class='bx bxs-right-arrow' style='color:#000'></i><strong>Data Protection:</strong> We implement appropriate security measures to safeguard your personal information against unauthorized access, alteration, disclosure, or destruction.</li>
-                <li><i class='bx bxs-right-arrow' style='color:#000'></i><strong>Consent:</strong> By using our services, you consent to the collection, processing, and storage of your information in accordance with this policy.</li>
-                <li><i class='bx bxs-right-arrow' style='color:#000'></i><strong>Updates to Policy:</strong> We may update this Privacy Policy from time to time. Users are encouraged to periodically review this section for any changes.</li>
-            </ul>
-        </div>
+        <p class="registration-doc-note">*Only .jpg/.png/.pdf file types are accepted, and the file should be less than 80 KB in size.</p>
 
-        <div class="refund-policy">
-            <strong>Refund Policy:</strong> <br>
-            Samatwa Service Centre (SSC) strives to ensure customer satisfaction. Our Refund Policy outlines
-            the conditions under which refunds may be issued. <br><br>
-        
-            <h4>Eligibility for Refund:</h4>
-            <ul class="checklist">
-                <li><i class='bx bxs-check-circle' style='color:#4CAF50'></i> Refund requests must be submitted within <strong>7 days</strong> of the transaction date.</li>
-                <li><i class='bx bxs-check-circle' style='color:#4CAF50'></i> Refunds are processed only if services were not provided or there was a technical issue.</li>
-                <li><i class='bx bxs-check-circle' style='color:#4CAF50'></i> Refunds are processed within <strong>14 business days</strong> after approval.</li>
-            </ul>
-        </div>
-    
-        <label class="checkbox-container">
-            <input type="checkbox" id="enableButton"> I have read and accept the terms & conditions.
-        </label>
-    
-        <div class="button-container">
-            <a href="{% url 'exam:entrepreneur_register' %}">
-                <button class="button-36" id="getStartedButton" disabled>Get Started</button>
+        <section class="registration-doc-policies" aria-label="Registration policies">
+            <article class="registration-doc-policy">
+                <h2 class="sr-only">Terms &amp; Conditions</h2>
+                <button class="registration-doc-policy__trigger" type="button" aria-expanded="true" aria-controls="registration-terms-panel" id="registration-terms-trigger">
+                    <span class="registration-doc-policy__icon" aria-hidden="true"><i class="fa fa-file-text-o"></i></span>
+                    <span class="registration-doc-policy__title">Terms &amp; Conditions</span>
+                    <i class="registration-doc-policy__chevron fa fa-chevron-up" aria-hidden="true"></i>
+                </button>
+                <div class="registration-doc-policy__panel" id="registration-terms-panel" role="region" aria-labelledby="registration-terms-trigger" aria-hidden="false">
+                    <div class="registration-doc-policy__panel-inner">
+                        <p>This Terms and Conditions agreement (the "Agreement") is a legal contract between
+                            you (the User) and SSC E-Governance Services India Limited (SSC). By accessing or
+                            using our services, you agree to comply with the terms outlined below.</p>
+                        <ul>
+                            <li>This Terms and Conditions agreement (the Agreement) is a legal contract between you (the User) and SSC
+                                E-Governance Services Limited (SSC). By accessing or using our services, you
+                                agree to comply with the terms outlined below. SSC reserves the right to modify,
+                                add, or remove portions of these Terms and Conditions at any time without prior
+                                notice. Users are encouraged to periodically review this section to stay updated on
+                                any changes. You also declare that the information provided in the form is accurate and complete
+                                to the best of your knowledge and accept full legal responsibility for any
+                                discrepancies or inaccuracies. By accepting these Terms and Conditions, you confirm
+                                your agreement with the policies outlined above.</li>
+                        </ul>
+                    </div>
+                </div>
+            </article>
+
+            <article class="registration-doc-policy">
+                <h2 class="sr-only">Privacy Policy</h2>
+                <button class="registration-doc-policy__trigger" type="button" aria-expanded="false" aria-controls="registration-privacy-panel" id="registration-privacy-trigger">
+                    <span class="registration-doc-policy__icon" aria-hidden="true"><i class="fa fa-shield"></i></span>
+                    <span class="registration-doc-policy__title">Privacy Policy</span>
+                    <i class="registration-doc-policy__chevron fa fa-chevron-down" aria-hidden="true"></i>
+                </button>
+                <div class="registration-doc-policy__panel" id="registration-privacy-panel" role="region" aria-labelledby="registration-privacy-trigger" aria-hidden="true">
+                    <div class="registration-doc-policy__panel-inner">
+                        <p>This Privacy Policy describes how SSC E-Governance Services India Limited ("SSC", "we", "us", or "our") collects, uses, and protects your information when you access or use our services. By using our services, you agree to the collection and use of information in accordance with this policy.</p>
+                        <ul>
+                            <li><strong>Information Collection:</strong> We may collect personal information, including but not limited to your name, contact details, Aadhaar UID/VID, as part of our service authentication process.</li>
+                            <li><strong>Use of Information:</strong> The information collected will be used solely for the purpose of providing, improving, and securing our services. We will not share your data with third parties without your consent, except as required by law.</li>
+                            <li><strong>Data Protection:</strong> We implement appropriate security measures to safeguard your personal information against unauthorized access, alteration, disclosure, or destruction.</li>
+                            <li><strong>Consent:</strong> By using our services, you consent to the collection, processing, and storage of your information in accordance with this policy.</li>
+                            <li><strong>Updates to Policy:</strong> We may update this Privacy Policy from time to time. Users are encouraged to periodically review this section for any changes.</li>
+                        </ul>
+                    </div>
+                </div>
+            </article>
+
+            <article class="registration-doc-policy">
+                <h2 class="sr-only">Refund Policy</h2>
+                <button class="registration-doc-policy__trigger" type="button" aria-expanded="false" aria-controls="registration-refund-panel" id="registration-refund-trigger">
+                    <span class="registration-doc-policy__icon" aria-hidden="true"><i class="fa fa-refresh"></i></span>
+                    <span class="registration-doc-policy__title">Refund Policy</span>
+                    <i class="registration-doc-policy__chevron fa fa-chevron-down" aria-hidden="true"></i>
+                </button>
+                <div class="registration-doc-policy__panel" id="registration-refund-panel" role="region" aria-labelledby="registration-refund-trigger" aria-hidden="true">
+                    <div class="registration-doc-policy__panel-inner">
+                        <p>Samatwa Service Centre (SSC) strives to ensure customer satisfaction. Our Refund Policy outlines
+                            the conditions under which refunds may be issued.</p>
+                        <h3>Eligibility for Refund:</h3>
+                        <ul>
+                            <li>Refund requests must be submitted within <strong>7 days</strong> of the transaction date.</li>
+                            <li>Refunds are processed only if services were not provided or there was a technical issue.</li>
+                            <li>Refunds are processed within <strong>14 business days</strong> after approval.</li>
+                        </ul>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <div class="registration-doc-actions">
+            <label class="registration-doc-agreement" for="enableButton">
+                <input type="checkbox" id="enableButton">
+                <span>I have read and accept the terms &amp; conditions.</span>
+            </label>
+
+            <a class="registration-doc-button-link" href="{% url 'exam:entrepreneur_register' %}" aria-disabled="true" tabindex="-1">
+                <button class="registration-doc-button" id="getStartedButton" type="button" disabled>Get Started</button>
             </a>
         </div>
-    </div>
-</div>
+    </section>
+</main>
 
-<div class="container2" style="width: 200%;">
-    <h2 class="header">We're here to assist you every step of the way!</h2>
-
-    <ul class="checklist">
-        <li>Your Trusted Support Partner</li>
-
-
-      </ul>
-
-    <ul class="checklist">
-        <li><i class='bx bxs-down-arrow' style='color:#6185d9'></i>Call</li>
-        <li><i class='bx bxs-right-arrow' style='color:#6185d9'></i>+91 8547418316 </li>
-        <li><i class='bx bxs-right-arrow' style='color:#6185d9'></i>+91 8547928317 </li>
-
-      </ul> 
-      <ul class="checklist">
-        <li><i class='bx bxs-down-arrow' style='color:#6185d9'></i>Email</li>
-        <li><i class='bx bxs-right-arrow' style='color:#6185d9'></i>samatwaservicecenter.gov.in@gmail.com </li>
-
-      </ul> 
-
-      <ul class="checklist">
-
-        <li style="text-align: justify;"><i class='bx bxs-right-arrow' style='color:#6185d9'></i> Have a question or need assistance? Call our helpline at +91 8547418316 or +91 8547928317 for inquiries or to report an issue. Our support team is ready to assist you!</li>
-
-      </ul> 
-    <div class="button-container">
-        <a href="{% url 'web:contact' %}">
-            <button class="button-36"  >Contact Now</button>
-        </a>
-    </div>
-</div>
-</div>
 <script>
-    document.getElementById("enableButton").addEventListener("change", function () {
-        let button = document.getElementById("getStartedButton");
-        button.disabled = !this.checked;
-    });
+    (function () {
+        const checkbox = document.getElementById("enableButton");
+        const button = document.getElementById("getStartedButton");
+        const buttonLink = button ? button.closest("a") : null;
+        const policyTriggers = document.querySelectorAll(".registration-doc-policy__trigger");
+
+        if (checkbox && button) {
+            const syncAcceptanceState = function () {
+                const accepted = checkbox.checked;
+                button.disabled = !accepted;
+
+                if (buttonLink) {
+                    buttonLink.setAttribute("aria-disabled", String(!accepted));
+                    buttonLink.tabIndex = accepted ? 0 : -1;
+                }
+            };
+
+            checkbox.addEventListener("change", syncAcceptanceState);
+
+            if (buttonLink) {
+                buttonLink.addEventListener("click", function (event) {
+                    if (!checkbox.checked) {
+                        event.preventDefault();
+                        checkbox.focus();
+                    }
+                });
+            }
+
+            syncAcceptanceState();
+        }
+
+        policyTriggers.forEach(function (trigger) {
+            const panel = document.getElementById(trigger.getAttribute("aria-controls"));
+            const chevron = trigger.querySelector(".registration-doc-policy__chevron");
+
+            const togglePolicy = function () {
+                const expanded = trigger.getAttribute("aria-expanded") === "true";
+                trigger.setAttribute("aria-expanded", String(!expanded));
+                panel.setAttribute("aria-hidden", String(expanded));
+
+                if (chevron) {
+                    chevron.classList.toggle("fa-chevron-up", !expanded);
+                    chevron.classList.toggle("fa-chevron-down", expanded);
+                }
+            };
+
+            trigger.addEventListener("click", togglePolicy);
+            trigger.addEventListener("keydown", function (event) {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    togglePolicy();
+                }
+            });
+        });
+    }());
 </script>
 
 {% endblock %}
