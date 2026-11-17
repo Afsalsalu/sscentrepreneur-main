@@ -46,6 +46,6 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(
                 f'SSCEGOV sync succeeded for CentreUserAccount '
-                f'id={centre_user.pk} username={centre_user.username}.'
+                f'id={centre_user.pk}.'
             )
         )

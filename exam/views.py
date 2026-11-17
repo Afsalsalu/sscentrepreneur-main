@@ -64,30 +64,31 @@ def _sync_qualified_user_after_commit(centre_user_id):
         sync_result = sync_qualified_user(centre_user)
         if not sync_result.success:
             logger.error(
-                "SSCEGOV qualified-user sync failed for CentreUserAccount "
-                "id=%s username=%s status=%s: %s",
+                "SSCEGOV automatic sync failed for CentreUserAccount id=%s "
+                "status=%s: %s",
                 centre_user.pk,
-                centre_user.username,
                 sync_result.status,
                 sync_result.message,
             )
         else:
             logger.info(
-                "SSCEGOV qualified-user sync succeeded for CentreUserAccount "
-                "id=%s username=%s",
+                "SSCEGOV automatic sync succeeded for CentreUserAccount id=%s",
                 centre_user.pk,
-                centre_user.username,
             )
     except Exception:
         logger.exception(
-            "SSCEGOV qualified-user sync raised an error for CentreUserAccount "
-            "id=%s",
+            "SSCEGOV automatic sync failed for CentreUserAccount id=%s "
+            "with an unexpected error",
             centre_user_id,
         )
 
 
 def _queue_qualified_user_sync(centre_user):
     """Queue sync for the exact persisted account after its transaction commits."""
+    logger.info(
+        "SSCEGOV automatic sync scheduled for CentreUserAccount id=%s",
+        centre_user.pk,
+    )
     transaction.on_commit(
         lambda centre_user_id=centre_user.pk: _sync_qualified_user_after_commit(
             centre_user_id
@@ -1177,18 +1178,21 @@ def details_entry(request):
             user.usertype = "centre"
             user.save()
 
-            # Assign the created user to the form instance and save it to the database
-            centre_user.user = user
-            centre_user.save()
+            # The form itself is a CentreUserAccount. Save that one account
+            # after the final-exam pass has been confirmed, then queue the
+            # destination sync only after this account transaction commits.
+            with transaction.atomic():
+                centre_user.user = user
+                centre_user.username = username
+                centre_user.save()
+                centre_user_account = centre_user
 
-            # Create a CentreUserAccount for the user
-            centre_user_account = CentreUserAccount.objects.create(
-                user=user,
-                username=username,
-                owner_centre=centre_user.centre_name,
-                mobile=centre_user.mobile,
-                # Add other fields as needed
-            )
+                passed_final_exam = MainExamProgress.objects.filter(
+                    user=request.user,
+                    status="Passed",
+                ).exists()
+                if passed_final_exam:
+                    _queue_qualified_user_sync(centre_user_account)
 
             # Access the formatted ID from the CentreUserAccount instance
             formatted_id = centre_user_account.formatted_id

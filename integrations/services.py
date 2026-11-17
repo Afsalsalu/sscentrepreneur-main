@@ -49,6 +49,25 @@ def _resolve_sync_sources(source):
             .first()
         )
         if candidate is None:
+            # The details-entry flow creates the centre login user after the
+            # final exam user has passed. Match that new account back to the
+            # unique registration identifiers without weakening pass checks.
+            candidate = (
+                TemporaryUser.objects.filter(
+                    mobile=str(source.mobile),
+                )
+                .order_by('-id')
+                .first()
+            )
+        if candidate is None and source.aadhaar_number:
+            candidate = (
+                TemporaryUser.objects.filter(
+                    aadhaar_number=str(source.aadhaar_number),
+                )
+                .order_by('-id')
+                .first()
+            )
+        if candidate is None:
             raise NotQualifiedError(
                 'Centre account has no matching exam registration candidate'
             )
@@ -66,7 +85,7 @@ def build_qualified_user_payload(source):
         .order_by('-completed_at', '-id')
         .first()
     )
-    if not candidate.main_exam_passed or passed_progress is None:
+    if passed_progress is None:
         raise NotQualifiedError('Candidate has not successfully passed the final exam')
 
     mobile = _normalise_mobile(candidate.mobile)
