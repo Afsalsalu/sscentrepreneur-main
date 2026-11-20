@@ -2,625 +2,2014 @@
 {% load static %}
 {% block content %}
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-<link rel="stylesheet" href="{% static 'web/dashboard/assets/css/register.css' %}">
-<link rel="icon" type="image/x-icon" href="/exam/register/images/favicon.ico">
-<link rel="icon" type="image/x-icon" href="{% static 'exam/register/images/favicon.ico' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{% static 'web/dashboard/assets/css/register.css' %}">
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.35.0/mapbox-gl.css">
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.1.3/mapbox-gl-geocoder.css" type="text/css">
+  <link rel="icon" type="image/x-icon" href="/exam/register/images/favicon.ico">
+  <link rel="icon" type="image/x-icon" href="{% static 'exam/register/images/favicon.ico' %}">
+  
+
+  <style>
+          .error {
+        color: #fff;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        text-align: center;
+        opacity: 1;
+        transition: opacity 0.5s ease-out;
+    }
+    .form-wrap {
+      position: relative;
+      padding: 30px;
+      background-color: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      z-index: 2;
+    }
+
+    .form-wrap::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url("{% static 'web/file/images/logoSSC-blue.png' %}");
+      background-size: 300px;
+      background-repeat: no-repeat;
+      background-position: center;
+      opacity: 0.1; /* Lower the opacity for a more transparent image */
+      z-index: -1;
+    }
+
+    .form-wrap h4 {
+      font-size: 24px;
+      font-weight: bold;
+      color: #284478;
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      font-size: 16px;
+      font-weight: 700;
+      color: #555;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      height: 40px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      font-size: 14px;
+      box-sizing: border-box;
+      margin-top: 8px;
+      background-color: transparent;
+    }
+
+    .form-group input:focus, .form-group select:focus {
+      border-color: #284478;
+      outline: none;
+      background-color: #ffffff;
+    }
+
+    .form-group .error {
+      font-size: 12px;
+      color: red;
+      margin-top: 5px;
+    }
+
+    .form-group select {
+      height: 45px;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      padding-right: 30px;
+    }
+
+    .form-group select:focus {
+      border-color: #284478;
+    }
+
+    .form-group button {
+      background-color: #284478;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+      width: 100%;
+    }
+
+    .form-group button:hover {
+      background-color: #1d3a6c;
+    }
+
+    .form-group .has-error input, .form-group .has-error select {
+      border-color: red;
+    }
+
+    .form-group .has-error label {
+      color: red;
+    }
+
+    /* .container {
+      background-color: #284478;
+      padding: 50px 15px;
+    } */
+
+    .py-5 {
+      padding-top: 50px;
+      padding-bottom: 50px;
+    }
+
+    .login-link {
+      color: #284478;
+      font-weight: bold;
+    }
+
+    .login-link:hover {
+      color: #1d3a6c;
+    }
+
+    #rzp-button {
+      background-color: #284478;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 18px;
+      border-radius: 5px;
+      /* margin-top: 20px; */
+      width: 100%;
+      cursor: pointer;
+    }
+
+    #rzp-button:hover {
+      background-color: #041678;
+    }
+
+    .labal-star{
+      color: red;
+    }
+
+    .location-card {
+      margin-top: 14px;
+      padding: 22px;
+      border: 1px solid #dce4f0;
+      border-radius: 20px;
+      background: linear-gradient(145deg, #f9fbff 0%, #ffffff 72%);
+      overflow: hidden;
+    }
+
+    .location-card__header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .location-card__title {
+      margin: 0;
+      color: #284478;
+      font-size: 19px;
+      font-weight: 750;
+      letter-spacing: -0.01em;
+    }
+
+    .location-card__subtitle {
+      margin: 5px 0 0;
+      color: #667085;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .location-card__search {
+      min-width: 0;
+      margin-bottom: 10px;
+    }
+
+    .location-card__coordinates {
+      margin: 0 0 10px;
+    }
+
+    .location-card__coordinates-title {
+      margin: 0 0 7px;
+      color: #344054;
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: 0.01em;
+    }
+
+    .location-card__coordinates-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .location-field {
+      min-width: 0;
+    }
+
+    .location-field__label {
+      display: block;
+      margin: 0 0 4px;
+      color: #667085;
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .location-coordinate-input {
+      width: 100%;
+      height: 34px;
+      padding: 6px 9px;
+      color: #284478;
+      background: #f7f9fc;
+      border: 1px solid #d5deeb;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      outline: none;
+    }
+
+    .location-status {
+      display: block;
+      margin: 0 0 10px;
+      padding: 9px 11px;
+      color: #475467;
+      background: #f5f7fa;
+      border: 1px solid #dfe5ee;
+      border-radius: 9px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .location-status.is-checking {
+      color: #175cd3;
+      background: #eff8ff;
+      border-color: #b2ddff;
+    }
+
+    .location-status.is-available {
+      color: #087443;
+      background: #ecfdf3;
+      border-color: #abefc6;
+    }
+
+    .location-status.is-unavailable,
+    .location-status.is-error {
+      color: #b42318;
+      background: #fff1f0;
+      border-color: #fecdca;
+    }
+
+    .location-card .mapboxgl-ctrl-geocoder {
+      width: 100%;
+      max-width: none;
+      min-height: 44px;
+      border: 1px solid #ccd7e7;
+      border-radius: 11px;
+      box-shadow: none;
+      font-family: inherit;
+    }
+
+    .location-card .mapboxgl-ctrl-geocoder:focus-within {
+      border-color: #284478;
+      box-shadow: 0 0 0 3px rgba(40, 68, 120, 0.1);
+    }
+
+    .location-card .mapboxgl-ctrl-geocoder input {
+      height: 42px;
+      margin-top: 0;
+      border: 0;
+      background: #fff;
+      box-shadow: none;
+    }
+
+    .location-card__map {
+      height: 320px;
+      width: 100%;
+      border: 1px solid #d5deeb;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #e9eef6;
+    }
+
+    .location-map-fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      color: #68758a;
+      background: #f2f5fa;
+      font-size: 13px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .location-card__actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .location-current-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 36px;
+      padding: 7px 12px;
+      color: #284478;
+      background: #eef3fb;
+      border: 1px solid #cdd9eb;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .location-current-button:hover,
+    .location-current-button:focus-visible {
+      background: #e4ecf9;
+      border-color: #284478;
+      outline: none;
+    }
+
+    .location-selected-place {
+      min-height: 18px;
+      margin: 9px 0 0;
+      color: #667085;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .location-error {
+      display: none;
+      margin: 10px 0 0;
+      padding: 9px 11px;
+      border-radius: 9px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .location-error.is-visible {
+      display: block;
+    }
+
+    .location-error {
+      color: #9d2c2c;
+      background: #fff0f0;
+      border: 1px solid #efb6b6;
+    }
+
+    .location-privacy {
+      margin: 12px 0 0;
+      color: #7a8699;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    #rzp-button:disabled {
+      opacity: 0.58;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 576px) {
+      .location-card {
+        padding: 16px;
+        border-radius: 15px;
+      }
+
+      .location-card__header {
+        display: block;
+      }
+
+      .location-card__map {
+        height: 260px;
+        border-radius: 11px;
+      }
+
+      .location-card__coordinates-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+    }
+  </style>
 
 <style>
-  .ssc-registration-page,
-  .ssc-registration-page *,
-  .ssc-registration-page *::before,
-  .ssc-registration-page *::after { box-sizing: border-box; }
+	/* Style the overlay with black color */
+	.overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0, 0, 0, 0.6); /* Full black overlay */
+		z-index: 999;
+		display: none; /* Initially hidden */
+		animation: fadeIn 0.3s ease-out;
+	}
 
-  .ssc-registration-page {
-    --ssc-navy: #163d74;
-    --ssc-orange: #f58225;
-    --ssc-ink: #172c4f;
-    --ssc-muted: #60718d;
-    --ssc-line: #dbe4f0;
-    --ssc-soft: #f5f8fc;
-    min-height: 100vh;
-    padding: 42px 16px 54px;
-    background: var(--ssc-soft);
-    color: var(--ssc-ink);
-    overflow-x: hidden;
-  }
+	/* Popup style */
+	.popup {
+		display: block;
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		background-color: #fff;
+		padding: 25px 40px;
+		border-radius: 12px;
+		box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+		text-align: center;
+		max-width: 500px;
+		width: 100%;
+		z-index: 1000;
+		opacity: 0;
+		animation: popupAnimation 0.5s forwards;
+	}
 
-  .ssc-registration-shell {
-    width: min(1100px, 100%);
-    margin: 0 auto;
-    padding: clamp(24px, 4vw, 46px);
-    background: #fff;
-    border: 1px solid #e4ebf4;
-    border-radius: 18px;
-    box-shadow: 0 16px 42px rgba(22, 61, 116, .12);
-  }
+	/* Style the logo image */
+	.popup img {
+		width: 100px;
+		margin-bottom: 20px;
+	}
 
-  .ssc-registration-intro { text-align: center; }
-  .ssc-registration-kicker {
-    margin: 0 0 8px;
-    color: var(--ssc-orange);
-    font-size: .78rem;
-    font-weight: 800;
-    letter-spacing: .15em;
-    text-transform: uppercase;
-  }
-  .ssc-registration-title {
-    max-width: 100%;
-    margin: 0;
-    color: var(--ssc-navy);
-    font-size: clamp(2rem, 4vw, 3rem);
-    font-weight: 800;
-    line-height: 1.12;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-  .ssc-registration-subtitle {
-    max-width: 640px;
-    margin: 12px auto 0;
-    color: var(--ssc-muted);
-    font-size: 1.03rem;
-  }
+	/* Button style */
+	.popup button {
+		padding: 12px 25px;
+		background-color: #244176;
+		color: white;
+		border: none;
+		border-radius: 5px;
+		font-size: 16px;
+		cursor: pointer;
+		transition: background-color 0.3s ease;
+	}
 
-  .ssc-progress {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
-    margin: 36px 0 38px;
-  }
-  .ssc-progress-step {
-    position: relative;
-    display: flex;
-    min-width: 0;
-    flex-direction: column;
-    align-items: center;
-    gap: 9px;
-    border: 0;
-    background: transparent;
-    color: #8a98ac;
-    cursor: pointer;
-    font: inherit;
-    padding: 0;
-  }
-  .ssc-progress-step::before {
-    content: '';
-    position: absolute;
-    z-index: 0;
-    top: 17px;
-    right: 50%;
-    width: 100%;
-    height: 2px;
-    background: var(--ssc-line);
-  }
-  .ssc-progress-step:first-child::before { display: none; }
-  .ssc-progress-step.is-complete::before,
-  .ssc-progress-step.is-active::before { background: var(--ssc-orange); }
-  .ssc-progress-number {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    width: 36px;
-    height: 36px;
-    place-items: center;
-    border: 2px solid #bcc8d8;
-    border-radius: 50%;
-    background: #fff;
-    color: #6e7e97;
-    font-weight: 800;
-  }
-  .ssc-progress-step.is-active .ssc-progress-number,
-  .ssc-progress-step.is-complete .ssc-progress-number {
-    border-color: var(--ssc-orange);
-    background: var(--ssc-orange);
-    color: #fff;
-  }
-  .ssc-progress-label {
-    color: inherit;
-    font-size: .83rem;
-    font-weight: 700;
-    text-align: center;
-    overflow-wrap: anywhere;
-  }
-  .ssc-progress-step.is-active .ssc-progress-label,
-  .ssc-progress-step.is-complete .ssc-progress-label { color: var(--ssc-navy); }
-  .ssc-progress-step:disabled { cursor: not-allowed; opacity: .62; }
-  .ssc-progress-step:focus-visible,
-  .ssc-wizard-button:focus-visible,
-  .ssc-login-link:focus-visible,
-  .ssc-map-link:focus-visible { outline: 3px solid rgba(245, 130, 37, .38); outline-offset: 3px; }
+	.popup button:hover {
+		background-color: #1e407d;
+	}
 
-  .ssc-server-error {
-    margin: 0 0 24px;
-    padding: 12px 15px;
-    border: 1px solid #f2b7b7;
-    border-radius: 9px;
-    background: #fff5f5;
-    color: #a62020;
-    font-size: .93rem;
-  }
+	/* Animation for the popup */
+	@keyframes popupAnimation {
+		0% { opacity: 0; transform: translate(-50%, -60%); }
+		100% { opacity: 1; transform: translate(-50%, -50%); }
+	}
 
-  .ssc-step-panel[hidden] { display: none; }
-  .ssc-step-heading { margin-bottom: 22px; }
-  .ssc-step-heading h2 {
-    margin: 0;
-    color: var(--ssc-navy);
-    font-size: 1.45rem;
-    font-weight: 800;
-  }
-  .ssc-step-heading p { margin: 6px 0 0; color: var(--ssc-muted); }
-  .ssc-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 22px; }
-  .ssc-field { min-width: 0; }
-  .ssc-field--wide { grid-column: 1 / -1; }
-  .ssc-field label {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--ssc-ink);
-    font-size: .91rem;
-    font-weight: 750;
-  }
-  .ssc-required { color: #d52a2a; }
-  .ssc-field input:not([type="file"]),
-  .ssc-field select {
-    display: block;
-    width: 100%;
-    min-height: 46px;
-    padding: 10px 13px;
-    border: 1px solid #cbd7e5;
-    border-radius: 8px;
-    background: #fff;
-    color: var(--ssc-ink);
-    font: inherit;
-    transition: border-color .18s ease, box-shadow .18s ease;
-  }
-  .ssc-field input[type="file"] {
-    display: block;
-    width: 100%;
-    min-height: 46px;
-    padding: 8px 10px;
-    border: 1px dashed #b8c8dc;
-    border-radius: 8px;
-    background: #f9fbfe;
-    color: var(--ssc-ink);
-    font: inherit;
-  }
-  .ssc-field input:focus,
-  .ssc-field select:focus {
-    border-color: #4a78b5;
-    box-shadow: 0 0 0 3px rgba(74, 120, 181, .14);
-    outline: 0;
-  }
-  .ssc-field.is-invalid input,
-  .ssc-field.is-invalid select { border-color: #cc3d3d; }
-  .ssc-field-help { display: block; margin-top: 6px; color: var(--ssc-muted); font-size: .78rem; line-height: 1.45; }
-  .ssc-field-error { display: none; margin-top: 6px; color: #b42323; font-size: .79rem; }
-  .ssc-field.is-invalid .ssc-field-error { display: block; }
-  .ssc-field.has-server-error input,
-  .ssc-field.has-server-error select { border-color: #cc3d3d; }
-
-  .ssc-location-box,
-  .ssc-security-note,
-  .ssc-review-box {
-    border: 1px solid var(--ssc-line);
-    border-radius: 10px;
-    background: #f8fbff;
-  }
-  .ssc-location-box { padding: 22px; }
-  .ssc-location-box p { margin: 0 0 16px; color: var(--ssc-muted); line-height: 1.55; }
-  .ssc-map-link {
-    display: inline-flex;
-    align-items: center;
-    min-height: 40px;
-    margin-top: 10px;
-    padding: 8px 13px;
-    border-radius: 7px;
-    background: #e6f4ed;
-    color: #187547;
-    font-size: .86rem;
-    font-weight: 700;
-    text-decoration: none;
-  }
-  .ssc-map-link:hover { background: #d6eee1; color: #105e38; }
-
-  .ssc-upload-list { display: grid; gap: 15px; }
-  .ssc-upload-row { padding: 17px; border: 1px solid var(--ssc-line); border-radius: 10px; background: #fbfdff; }
-  .ssc-upload-row label { margin-bottom: 4px; }
-  .ssc-file-name { display: block; min-height: 18px; margin-top: 7px; color: #396b9f; font-size: .8rem; }
-
-  .ssc-review-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-  .ssc-review-box { padding: 15px 16px; }
-  .ssc-review-box h3 { margin: 0 0 10px; color: var(--ssc-navy); font-size: 1rem; }
-  .ssc-review-list { display: grid; gap: 7px; margin: 0; }
-  .ssc-review-item { display: flex; justify-content: space-between; gap: 15px; color: var(--ssc-muted); font-size: .88rem; }
-  .ssc-review-item strong { color: var(--ssc-ink); text-align: right; font-weight: 700; overflow-wrap: anywhere; }
-  .ssc-fee-box { margin-top: 16px; border-color: #cbdcf2; background: #eef5fd; }
-  .ssc-fee-box strong { color: var(--ssc-navy); font-size: 1.1rem; }
-
-  .ssc-step-actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 15px;
-    margin-top: 32px;
-    padding-top: 21px;
-    border-top: 1px solid var(--ssc-line);
-  }
-  .ssc-step-actions--end { justify-content: flex-end; }
-  .ssc-wizard-button {
-    min-width: 160px;
-    min-height: 46px;
-    padding: 10px 18px;
-    border: 1px solid var(--ssc-navy);
-    border-radius: 8px;
-    background: var(--ssc-navy);
-    color: #fff;
-    cursor: pointer;
-    font: inherit;
-    font-weight: 750;
-    transition: background .18s ease, transform .18s ease;
-  }
-  .ssc-wizard-button:hover { background: #0e2d5a; transform: translateY(-1px); }
-  .ssc-wizard-button--secondary { border-color: #b6c7dc; background: #fff; color: var(--ssc-navy); }
-  .ssc-wizard-button--secondary:hover { background: #f5f8fc; }
-  .ssc-wizard-button:disabled { cursor: wait; opacity: .7; transform: none; }
-  .ssc-secure-note { margin: 0; color: #237347; font-size: .83rem; font-weight: 650; }
-  .ssc-secure-note::before { content: '✓'; display: inline-grid; width: 21px; height: 21px; margin-right: 7px; place-items: center; border-radius: 50%; background: #dcf5e6; color: #198447; font-weight: 800; }
-  .ssc-login-line { margin: 25px 0 0; color: var(--ssc-muted); text-align: center; }
-  .ssc-login-link { color: var(--ssc-navy); font-weight: 750; }
-
-  @media (max-width: 760px) {
-    .ssc-registration-page { padding: 25px 10px 38px; }
-    .ssc-registration-shell { padding: 24px 16px; border-radius: 13px; }
-    .ssc-progress { gap: 3px; margin: 28px 0 30px; }
-    .ssc-progress-label { font-size: .68rem; line-height: 1.2; }
-    .ssc-progress-number { width: 31px; height: 31px; font-size: .87rem; }
-    .ssc-progress-step::before { top: 14px; }
-    .ssc-field-grid, .ssc-review-grid { grid-template-columns: 1fr; gap: 16px; }
-    .ssc-field--wide { grid-column: auto; }
-    .ssc-step-actions { align-items: stretch; flex-direction: column-reverse; }
-    .ssc-step-actions .ssc-wizard-button { width: 100%; }
-    .ssc-step-actions .ssc-secure-note { text-align: center; }
-    .ssc-review-item { align-items: flex-start; flex-direction: column; gap: 2px; }
-    .ssc-review-item strong { text-align: left; }
-  }
-
-  @media (max-width: 430px) {
-    .ssc-registration-title { font-size: 1.55rem; line-height: 1.2; }
-    .ssc-registration-subtitle { max-width: 100%; font-size: .88rem; line-height: 1.4; white-space: normal; overflow-wrap: anywhere; }
-    .ssc-progress-label { font-size: .56rem; line-height: 1.15; }
-    .ssc-location-box, .ssc-upload-row { padding: 14px; }
-  }
+	/* Animation for the overlay */
+	@keyframes fadeIn {
+		0% { opacity: 0; }
+		100% { opacity: 1; }
+	}
 </style>
 
-<div class="ssc-registration-page" data-server-error="{% if error or form.errors %}true{% else %}false{% endif %}">
-  <span id="displayYear" hidden aria-hidden="true"></span>
-  <main class="ssc-registration-shell" aria-labelledby="registration-title">
-    <header class="ssc-registration-intro">
-      <p class="ssc-registration-kicker">SSC Service Centre</p>
-      <h1 id="registration-title" class="ssc-registration-title">Register New User</h1>
-      <p class="ssc-registration-subtitle">Complete your details to begin your SSC registration.</p>
-    </header>
+  <style>
+    .registration-page {
+      min-height: calc(100vh - 64px);
+      padding: 28px 16px 40px;
+      background: #203a66;
+    }
 
-    <nav class="ssc-progress" aria-label="Registration progress">
-      <button type="button" class="ssc-progress-step is-active" data-step-target="1" aria-current="step">
-        <span class="ssc-progress-number">1</span><span class="ssc-progress-label">Personal Details</span>
-      </button>
-      <button type="button" class="ssc-progress-step" data-step-target="2" disabled>
-        <span class="ssc-progress-number">2</span><span class="ssc-progress-label">Contact &amp; Address</span>
-      </button>
-      <button type="button" class="ssc-progress-step" data-step-target="3" disabled>
-        <span class="ssc-progress-number">3</span><span class="ssc-progress-label">Location</span>
-      </button>
-      <button type="button" class="ssc-progress-step" data-step-target="4" disabled>
-        <span class="ssc-progress-number">4</span><span class="ssc-progress-label">Documents</span>
-      </button>
-      <button type="button" class="ssc-progress-step" data-step-target="5" disabled>
-        <span class="ssc-progress-number">5</span><span class="ssc-progress-label">Review &amp; Pay</span>
-      </button>
-    </nav>
+    .registration-shell {
+      width: min(100%, 980px);
+      margin: 0 auto;
+    }
 
-    {% if error or form.errors %}
-      <div class="ssc-server-error" role="alert">
-        {% if error %}{{ error }}{% else %}Please review the highlighted fields and try again.{% endif %}
+    .registration-card {
+      position: relative;
+      padding: 22px 24px 20px;
+      overflow: hidden;
+      background: #fff;
+      border: 1px solid #dbe4f0;
+      border-radius: 14px;
+      box-shadow: 0 12px 26px rgba(11, 35, 70, 0.16);
+    }
+
+    .registration-card::before {
+      display: none !important;
+    }
+
+    .registration-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .registration-eyebrow {
+      margin: 0 0 4px;
+      color: #55709a;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .registration-heading h1 {
+      margin: 0;
+      color: #19365f;
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .registration-heading p {
+      max-width: 400px;
+      margin: 4px 0 0;
+      color: #66758b;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .registration-secure-note {
+      align-self: flex-start;
+      padding: 7px 10px;
+      color: #285f50;
+      background: #eef9f4;
+      border: 1px solid #cdebdc;
+      border-radius: 8px;
+      font-size: 10px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .wizard-progress {
+      margin-bottom: 20px;
+      padding: 11px 12px;
+      background: #f6f8fb;
+      border: 1px solid #e1e8f1;
+      border-radius: 11px;
+    }
+
+    .wizard-progress ol {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .wizard-progress li {
+      min-width: 0;
+    }
+
+    .wizard-step-indicator {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      min-width: 0;
+      gap: 7px;
+      padding: 0;
+      color: #8693a6;
+      background: transparent;
+      border: 0;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: left;
+    }
+
+    .wizard-step-indicator:not(:disabled) {
+      cursor: pointer;
+    }
+
+    .wizard-step-indicator__mark {
+      display: inline-grid;
+      flex: 0 0 25px;
+      width: 25px;
+      height: 25px;
+      place-items: center;
+      color: #8794a8;
+      background: #fff;
+      border: 1px solid #cfd9e7;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .wizard-step-indicator.is-active {
+      color: #1c579e;
+    }
+
+    .wizard-step-indicator.is-active .wizard-step-indicator__mark {
+      color: #fff;
+      background: #2b70c9;
+      border-color: #2b70c9;
+      box-shadow: 0 0 0 3px #dcecff;
+    }
+
+    .wizard-step-indicator.is-complete {
+      color: #28604f;
+    }
+
+    .wizard-step-indicator.is-complete .wizard-step-indicator__mark {
+      color: #fff;
+      background: #2d8065;
+      border-color: #2d8065;
+    }
+
+    .wizard-server-error {
+      margin: 0 0 15px;
+      padding: 10px 12px;
+      color: #a42c2c;
+      background: #fff1f1;
+      border: 1px solid #f2c6c6;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .wizard-content {
+      position: relative;
+    }
+
+    .wizard-panel {
+      position: absolute;
+      inset: 0;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.16s ease;
+    }
+
+    .wizard-panel.is-active {
+      position: relative;
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .wizard-panel__heading {
+      margin-bottom: 16px;
+    }
+
+    .wizard-panel__heading h2 {
+      margin: 0;
+      color: #1d3c6a;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .wizard-panel__heading p {
+      margin: 4px 0 0;
+      color: #6f7e92;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .wizard-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px 16px;
+    }
+
+    .wizard-field {
+      min-width: 0;
+      margin: 0;
+    }
+
+    .wizard-field--wide {
+      grid-column: 1 / -1;
+    }
+
+    .wizard-field label,
+    .review-label {
+      display: block;
+      margin: 0 0 5px;
+      color: #3e4e64;
+      font-size: 11px;
+      font-weight: 750;
+      line-height: 1.3;
+    }
+
+    .wizard-control,
+    .wizard-field input:not([type="hidden"]),
+    .wizard-field select,
+    .wizard-field textarea {
+      width: 100%;
+      height: 44px;
+      margin: 0;
+      padding: 9px 11px;
+      color: #263a55;
+      background: #fbfcfe;
+      border: 1px solid #cfd9e6;
+      border-radius: 9px;
+      box-shadow: none;
+      font: inherit;
+      font-size: 13px;
+      line-height: 1.25;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .wizard-field input[type="file"] {
+      padding: 9px 10px;
+      color: #52647c;
+      font-size: 12px;
+    }
+
+    .wizard-control:focus,
+    .wizard-field input:not([type="hidden"]):focus,
+    .wizard-field select:focus,
+    .wizard-field textarea:focus {
+      background: #fff;
+      border-color: #2b70c9;
+      box-shadow: 0 0 0 3px #e3efff;
+    }
+
+    .wizard-field.has-error input,
+    .wizard-field.has-error select {
+      border-color: #d84949;
+    }
+
+    .wizard-field.has-error label {
+      color: #b43737;
+    }
+
+    .wizard-help,
+    .wizard-inline-error {
+      display: block;
+      margin-top: 5px;
+      color: #78879b;
+      font-size: 10px;
+      line-height: 1.35;
+    }
+
+    .wizard-inline-error {
+      color: #c03939;
+    }
+
+    .wizard-validation-message {
+      display: block;
+      margin-top: 5px;
+      color: #c03939;
+      font-size: 10px;
+      line-height: 1.35;
+    }
+
+    .wizard-file-preview {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 66px;
+      margin-top: 12px;
+      padding: 9px 11px;
+      background: #f7f9fc;
+      border: 1px solid #e0e7f0;
+      border-radius: 9px;
+    }
+
+    .wizard-file-preview img {
+      display: none;
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 7px;
+    }
+
+    .wizard-file-preview img.is-visible {
+      display: block;
+    }
+
+    .wizard-file-preview p {
+      margin: 0;
+      color: #67778d;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .wizard-file-preview strong {
+      display: block;
+      margin-bottom: 2px;
+      color: #304a70;
+      font-size: 12px;
+    }
+
+    .wizard-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 22px;
+      padding-top: 14px;
+      border-top: 1px solid #e4eaf2;
+    }
+
+    .wizard-actions__right {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-left: auto;
+    }
+
+    .wizard-button,
+    #rzp-button {
+      width: auto;
+      min-height: 40px;
+      padding: 9px 16px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.2;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+    }
+
+    .wizard-button--secondary {
+      color: #41536d;
+      background: #fff;
+      border-color: #cfd9e6;
+    }
+
+    .wizard-button--secondary:hover,
+    .wizard-button--secondary:focus-visible {
+      background: #f6f8fb;
+      border-color: #9eb2cb;
+    }
+
+    .wizard-button--primary,
+    #rzp-button {
+      color: #fff;
+      background: #1e5fae;
+      border-color: #1e5fae;
+    }
+
+    .wizard-button--primary:hover,
+    .wizard-button--primary:focus-visible,
+    #rzp-button:hover:not(:disabled) {
+      background: #174e91;
+      border-color: #174e91;
+    }
+
+    .wizard-button:focus-visible,
+    #rzp-button:focus-visible,
+    .wizard-step-indicator:focus-visible {
+      outline: 3px solid #cfe3ff;
+      outline-offset: 2px;
+    }
+
+    .wizard-button:disabled,
+    #rzp-button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .review-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0 16px;
+      margin: 0;
+      padding: 0;
+      border-top: 1px solid #e5ebf3;
+    }
+
+    .review-item {
+      min-width: 0;
+      padding: 10px 0;
+      border-bottom: 1px solid #e5ebf3;
+    }
+
+    .review-item--wide {
+      grid-column: 1 / -1;
+    }
+
+    .review-value {
+      margin: 0;
+      overflow-wrap: anywhere;
+      color: #243b5d;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .review-location {
+      margin-top: 14px;
+      padding: 11px 12px;
+      background: #f5f8fc;
+      border: 1px solid #dfe7f1;
+      border-radius: 9px;
+    }
+
+    .review-location .review-label {
+      margin-bottom: 4px;
+    }
+
+    .review-location-status {
+      margin: 4px 0 0;
+      color: #2b775e;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .review-location-status.is-unavailable,
+    .review-location-status.is-error {
+      color: #b42318;
+    }
+
+    .review-location-status.is-checking {
+      color: #175cd3;
+    }
+
+    .registration-login {
+      margin: 14px 0 0;
+      color: #dce8f8;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .registration-login a {
+      color: #fff;
+      font-weight: 800;
+    }
+
+    .registration-page .location-card {
+      margin-top: 0;
+    }
+
+    @media (max-width: 740px) {
+      .registration-page {
+        padding: 16px 10px 28px;
+      }
+
+      .registration-card {
+        padding: 17px 14px 15px;
+        border-radius: 12px;
+      }
+
+      .registration-heading {
+        display: block;
+        margin-bottom: 14px;
+      }
+
+      .registration-secure-note {
+        display: inline-block;
+        margin-top: 10px;
+      }
+
+      .wizard-progress {
+        padding: 9px 7px;
+      }
+
+      .wizard-progress ol {
+        gap: 2px;
+      }
+
+      .wizard-step-indicator {
+        justify-content: center;
+      }
+
+      .wizard-step-indicator__label {
+        display: none;
+      }
+
+      .wizard-grid,
+      .review-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .wizard-field--wide,
+      .review-item--wide {
+        grid-column: auto;
+      }
+
+      .wizard-actions {
+        position: sticky;
+        bottom: 0;
+        z-index: 5;
+        margin-right: -14px;
+        margin-left: -14px;
+        padding: 12px 14px;
+        background: rgba(255, 255, 255, 0.96);
+      }
+
+      .wizard-button,
+      #rzp-button {
+        min-height: 42px;
+        padding-right: 12px;
+        padding-left: 12px;
+      }
+    }
+  </style>
+
+  <div class="registration-page">
+    <div class="registration-shell">
+      <div class="registration-card form-wrap">
+        <div class="registration-heading">
+          <div>
+            <p class="registration-eyebrow">SSC Centrepreneur</p>
+            <h1 id="title">Centre Registration</h1>
+            <p>Complete the five short steps to register your service centre.</p>
+          </div>
+          <div class="registration-secure-note">Secure government registration</div>
+        </div>
+
+        {% if error %}
+          <div id="registration-error" class="wizard-server-error" role="alert">{{ error }}</div>
+        {% endif %}
+
+        <form id="registration-form" method="post" enctype="multipart/form-data" action="{% url 'exam:temporary_user' %}">
+          {% csrf_token %}
+
+          <nav class="wizard-progress" aria-label="Registration progress">
+            <ol>
+              <li><button type="button" class="wizard-step-indicator is-active" data-wizard-target="1" aria-current="step"><span class="wizard-step-indicator__mark">1</span><span class="wizard-step-indicator__label">Personal Details</span></button></li>
+              <li><button type="button" class="wizard-step-indicator" data-wizard-target="2" disabled><span class="wizard-step-indicator__mark">2</span><span class="wizard-step-indicator__label">Centre Area</span></button></li>
+              <li><button type="button" class="wizard-step-indicator" data-wizard-target="3" disabled><span class="wizard-step-indicator__mark">3</span><span class="wizard-step-indicator__label">Documents</span></button></li>
+              <li><button type="button" class="wizard-step-indicator" data-wizard-target="4" disabled><span class="wizard-step-indicator__mark">4</span><span class="wizard-step-indicator__label">Location</span></button></li>
+              <li><button type="button" class="wizard-step-indicator" data-wizard-target="5" disabled><span class="wizard-step-indicator__mark">5</span><span class="wizard-step-indicator__label">Review &amp; Pay</span></button></li>
+            </ol>
+          </nav>
+
+          <div class="wizard-content">
+            <section class="wizard-panel is-active" data-wizard-panel="1" aria-labelledby="step-one-title">
+              <div class="wizard-panel__heading">
+                <h2 id="step-one-title">Personal Details</h2>
+                <p>Enter the applicant details exactly as shown on the government ID proof.</p>
+              </div>
+
+              <div class="wizard-grid">
+                <div class="wizard-field form-group{% if form.name.errors %} has-error{% endif %}">
+                  <label for="name">Name (As per govt. ID Proof) <span class="labal-star">*</span></label>
+                  <input type="text" id="name" class="wizard-control" name="name" placeholder="Full name" value="{{ registration_values.name|default:'' }}" required>
+                </div>
+
+                <div class="wizard-field form-group{% if form.photo.errors %} has-error{% endif %}">
+                  <label for="photo">Upload Photo <span class="labal-star">*</span></label>
+                  <input type="file" id="photo" class="wizard-control" accept="image/*" name="photo" required>
+                  <span class="wizard-help">Upload an image below 80kb.</span>
+                </div>
+
+                <div class="wizard-field form-group">
+                  <label for="email">Email <span class="labal-star">*</span></label>
+                  <input type="email" id="email" class="wizard-control" name="email" placeholder="Email address" value="{{ registration_values.email|default:'' }}" required>
+                </div>
+
+                <div class="wizard-field form-group{% if form.mobile.errors %} has-error{% endif %}">
+                  <label for="mobile">Mobile <span class="labal-star">*</span></label>
+                  <input type="text" id="mobile" minlength="10" maxlength="10" oninput="validateMobileNumber(event)" class="wizard-control" name="mobile" placeholder="10-digit mobile number" value="{{ registration_values.mobile|default:'' }}" required>
+                  <span id="validate-error-mobile" class="wizard-inline-error" style="display:none;">Mobile Number must be exactly 10 digits.</span>
+                </div>
+
+                <div class="wizard-field form-group{% if form.another_name.errors %} has-error{% endif %}">
+                  <label for="another_name">Father&apos;s / Mother&apos;s / Spouse&apos;s Name <span class="labal-star">*</span></label>
+                  <input type="text" id="another_name" class="wizard-control" name="another_name" placeholder="Parent or spouse name" value="{{ registration_values.another_name|default:'' }}" required>
+                </div>
+
+                <div class="wizard-field form-group{% if form.gender.errors %} has-error{% endif %}">
+                  <label for="gender">Gender (As per govt. ID Proof) <span class="labal-star">*</span></label>
+                  <select id="gender" name="gender" class="wizard-control" required>
+                    <option value="">Select gender</option>
+                    <option value="male"{% if registration_values.gender == 'male' %} selected{% endif %}>Male</option>
+                    <option value="female"{% if registration_values.gender == 'female' %} selected{% endif %}>Female</option>
+                    <option value="transgender"{% if registration_values.gender == 'transgender' %} selected{% endif %}>Transgender</option>
+                  </select>
+                </div>
+
+                <div class="wizard-field form-group{% if form.date_of_birth.errors %} has-error{% endif %}">
+                  <label for="date_of_birth">D.O.B (As per govt. ID Proof) <span class="labal-star">*</span></label>
+                  <input type="date" id="date_of_birth" class="wizard-control" name="date_of_birth" value="{{ registration_values.date_of_birth|default:'' }}" required>
+                </div>
+
+                <div class="wizard-field form-group{% if form.aadhaar_number.errors %} has-error{% endif %}">
+                  <label for="aadhaar_number">Aadhaar Number <span class="labal-star">*</span></label>
+                  <input type="text" id="aadhaar_number" minlength="12" maxlength="12" oninput="validateAadharNumber(event)" class="wizard-control" name="aadhaar_number" placeholder="12-digit Aadhaar number" value="{{ registration_values.aadhaar_number|default:'' }}" required>
+                  <span id="validate-error-aadhaar" class="wizard-inline-error" style="display:none;">Aadhaar Number must be exactly 12 digits.</span>
+                </div>
+              </div>
+
+              <div class="wizard-actions">
+                <span></span>
+                <button type="button" class="wizard-button wizard-button--primary" data-wizard-next="2">Continue to Centre Details <span aria-hidden="true">→</span></button>
+              </div>
+            </section>
+
+            <section class="wizard-panel" data-wizard-panel="2" aria-labelledby="step-two-title" aria-hidden="true">
+              <div class="wizard-panel__heading">
+                <h2 id="step-two-title">Centre Area Details</h2>
+                <p>Tell us where the centre will operate so we can route local services correctly.</p>
+              </div>
+
+              <div class="wizard-grid">
+                <div class="wizard-field form-group">
+                  <label for="state">State <span class="labal-star">*</span></label>
+                  <select name="state" id="state" class="wizard-control" required>
+                    <option value="">Select state</option>
+                    {% for state in states %}
+                      <option value="{{ state.state_id }}"{% if selected_state == state.state_id|stringformat:'s' %} selected{% endif %}>{{ state.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <div class="wizard-field form-group">
+                  <label for="district">District <span class="labal-star">*</span></label>
+                  <select name="district" id="district" class="wizard-control" required>
+                    <option value="">Select district</option>
+                    {% for district in districts %}
+                      <option value="{{ district.district_id }}"{% if registration_values.district == district.district_id|stringformat:'s' %} selected{% endif %}>{{ district.district_name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <input type="hidden" id="district_selected" name="district_selected" value="{{ registration_values.district_selected|default:registration_values.district|default:'' }}">
+
+                <div class="wizard-field form-group">
+                  <label for="local_body">Local Body <span class="labal-star">*</span></label>
+                  <select id="local_body" name="local_body" class="wizard-control" required>
+                    <option value="Panchayath"{% if registration_values.local_body == 'Panchayath' or not registration_values.local_body %} selected{% endif %}>Panchayath</option>
+                    <option value="Corporation"{% if registration_values.local_body == 'Corporation' %} selected{% endif %}>Corporation</option>
+                    <option value="Muncipality"{% if registration_values.local_body == 'Muncipality' %} selected{% endif %}>Muncipality</option>
+                  </select>
+                </div>
+
+                <div class="wizard-field form-group">
+                  <label for="panchayat">Panchayat / Municipality / Corporation <span class="labal-star">*</span></label>
+                  <select id="panchayat" name="panchayat" class="wizard-control" required>
+                    <option value="">Select</option>
+                    {% for panchayat in panchayats %}
+                      <option value="{{ panchayat.panchayat_id }}"{% if registration_values.panchayat == panchayat.panchayat_id|stringformat:'s' %} selected{% endif %}>{{ panchayat.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <div class="wizard-field form-group{% if form.ward_number.errors %} has-error{% endif %}">
+                  <label for="ward_number">Ward Number <span class="labal-star">*</span></label>
+                  <input type="text" class="wizard-control" id="ward_number" name="ward_number" placeholder="Ward number" value="{{ registration_values.ward_number|default:'' }}" required>
+                </div>
+
+                <div class="wizard-field wizard-field--wide form-group">
+                  <label for="address">Centre Address <span class="labal-star">*</span></label>
+                  <input type="text" class="wizard-control" id="address" name="address" placeholder="Full centre address" value="{{ registration_values.address|default:'' }}" required>
+                </div>
+              </div>
+
+              <div class="wizard-actions">
+                <button type="button" class="wizard-button wizard-button--secondary" data-wizard-back="1">← Back</button>
+                <button type="button" class="wizard-button wizard-button--primary" data-wizard-next="3">Continue to Documents <span aria-hidden="true">→</span></button>
+              </div>
+            </section>
+
+            <section class="wizard-panel" data-wizard-panel="3" aria-labelledby="step-three-title" aria-hidden="true">
+              <div class="wizard-panel__heading">
+                <h2 id="step-three-title">Required Documents</h2>
+                <p>Upload the requested documents for verification. Your original file selections stay in place while you move through the wizard.</p>
+              </div>
+
+              <div class="wizard-grid">
+                <div class="wizard-field wizard-field--wide">
+                  <label>Applicant Photo Preview</label>
+                  <div class="wizard-file-preview" id="photo-preview" aria-live="polite">
+                    <img id="photo-preview-image" alt="Selected applicant photo preview">
+                    <p><strong id="photo-preview-title">No photo selected yet</strong><span id="photo-preview-text">Return to Personal Details to choose the required photo.</span></p>
+                  </div>
+                </div>
+
+                <div class="wizard-field wizard-field--wide form-group{% if form.cheque_passbook.errors %} has-error{% endif %}">
+                  <label for="cheque_passbook">Cancelled Cheque / Passbook Front Page <span class="labal-star">*</span></label>
+                  <input type="file" id="cheque_passbook" class="wizard-control" name="cheque_passbook" accept="image/*" required>
+                  <span class="wizard-help">Upload an image below 80kb.</span>
+                </div>
+
+                <div class="wizard-field wizard-field--wide wizard-file-preview" id="document-status" aria-live="polite">
+                  <p><strong id="document-status-title">No document selected yet</strong><span id="document-status-text">Choose the cancelled cheque or passbook image above.</span></p>
+                </div>
+              </div>
+
+              <div class="wizard-actions">
+                <button type="button" class="wizard-button wizard-button--secondary" data-wizard-back="2">← Back</button>
+                <button type="button" class="wizard-button wizard-button--primary" data-wizard-next="4">Continue to Location <span aria-hidden="true">→</span></button>
+              </div>
+            </section>
+
+            <section class="wizard-panel" data-wizard-panel="4" aria-labelledby="step-four-title" aria-hidden="true">
+              <div class="wizard-panel__heading">
+                <h2 id="step-four-title">Centre Location <span class="labal-star">*</span></h2>
+                <p>Search your business location or place the pin precisely on the map.</p>
+              </div>
+
+              <section class="location-card" aria-labelledby="centre-location-title">
+                <div class="location-card__header">
+                  <div>
+                    <h3 id="centre-location-title" class="location-card__title">Centre Location</h3>
+                    <p class="location-card__subtitle">Your location is checked against nearby registered centres before you continue.</p>
+                  </div>
+                </div>
+
+                <div id="centre-location-search" class="location-card__search" aria-label="Search business location"></div>
+                <div class="location-card__coordinates" aria-labelledby="selected-coordinates-label">
+                  <p id="selected-coordinates-label" class="location-card__coordinates-title">Selected Coordinates</p>
+                  <div class="location-card__coordinates-grid">
+                    <div class="location-field">
+                      <label class="location-field__label" for="selected-latitude">Latitude</label>
+                      <input id="selected-latitude" class="location-coordinate-input" type="text" value="--" readonly aria-readonly="true">
+                    </div>
+                    <div class="location-field">
+                      <label class="location-field__label" for="selected-longitude">Longitude</label>
+                      <input id="selected-longitude" class="location-coordinate-input" type="text" value="--" readonly aria-readonly="true">
+                    </div>
+                  </div>
+                </div>
+                <p id="location-status" class="location-status" role="status" aria-live="polite">Select a location to check centre availability.</p>
+                <div id="centre-location-map" class="location-card__map" role="application" aria-label="Interactive centre location map"></div>
+
+                <div class="location-card__actions">
+                  <button type="button" id="use-current-location" class="location-current-button">
+                    <span aria-hidden="true">+</span> Use my current location
+                  </button>
+                </div>
+
+                <p id="selected-place" class="location-selected-place" aria-live="polite"></p>
+                <p id="location-error" class="location-error" role="alert" aria-live="assertive">Select your centre location on the map to continue.</p>
+                <p class="location-privacy">Your location is used only to verify nearby centre availability.</p>
+
+                <input type="hidden" id="latitude" name="latitude" value="{{ registration_values.latitude|default:'' }}" readonly required>
+              </section>
+
+              <div class="wizard-actions">
+                <button type="button" class="wizard-button wizard-button--secondary" data-wizard-back="3">← Back</button>
+                <button type="button" class="wizard-button wizard-button--primary" data-wizard-next="5">Continue to Review <span aria-hidden="true">→</span></button>
+              </div>
+            </section>
+
+            <section class="wizard-panel" data-wizard-panel="5" aria-labelledby="step-five-title" aria-hidden="true">
+              <div class="wizard-panel__heading">
+                <h2 id="step-five-title">Review &amp; Pay</h2>
+                <p>Review your details carefully. Aadhaar is masked here and your original values remain in the form.</p>
+              </div>
+
+              <dl class="review-grid">
+                <div class="review-item"><dt class="review-label">Name</dt><dd class="review-value" data-review-value="name">—</dd></div>
+                <div class="review-item"><dt class="review-label">Email</dt><dd class="review-value" data-review-value="email">—</dd></div>
+                <div class="review-item"><dt class="review-label">Mobile</dt><dd class="review-value" data-review-value="mobile">—</dd></div>
+                <div class="review-item"><dt class="review-label">Parent / Spouse</dt><dd class="review-value" data-review-value="another_name">—</dd></div>
+                <div class="review-item"><dt class="review-label">Gender</dt><dd class="review-value" data-review-value="gender">—</dd></div>
+                <div class="review-item"><dt class="review-label">Date of Birth</dt><dd class="review-value" data-review-value="date_of_birth">—</dd></div>
+                <div class="review-item"><dt class="review-label">Aadhaar</dt><dd class="review-value" data-review-value="aadhaar_number">—</dd></div>
+                <div class="review-item"><dt class="review-label">Photo</dt><dd class="review-value" data-review-value="photo">Not selected</dd></div>
+                <div class="review-item"><dt class="review-label">State</dt><dd class="review-value" data-review-value="state">—</dd></div>
+                <div class="review-item"><dt class="review-label">District</dt><dd class="review-value" data-review-value="district">—</dd></div>
+                <div class="review-item"><dt class="review-label">Local Body</dt><dd class="review-value" data-review-value="local_body">—</dd></div>
+                <div class="review-item"><dt class="review-label">Panchayat / Corporation</dt><dd class="review-value" data-review-value="panchayat">—</dd></div>
+                <div class="review-item"><dt class="review-label">Ward Number</dt><dd class="review-value" data-review-value="ward_number">—</dd></div>
+                <div class="review-item"><dt class="review-label">Document</dt><dd class="review-value" data-review-value="cheque_passbook">Not selected</dd></div>
+                <div class="review-item review-item--wide"><dt class="review-label">Centre Address</dt><dd class="review-value" data-review-value="address">—</dd></div>
+              </dl>
+
+              <div class="review-location">
+                <p class="review-label">Centre Location</p>
+                <p class="review-value"><span data-review-value="latitude">—</span></p>
+                <p id="review-location-status" class="review-location-status">Location availability will appear here.</p>
+              </div>
+
+              <div class="wizard-actions">
+                <button type="button" class="wizard-button wizard-button--secondary" data-wizard-back="4">← Back</button>
+                <button id="rzp-button" type="submit" class="wizard-button wizard-button--primary">Register &amp; Pay</button>
+              </div>
+            </section>
+          </div>
+        </form>
+        <p class="registration-login">Already registered? <a href="{% url 'exam:entrepreneur_userlogin' %}">Login</a></p>
       </div>
-    {% endif %}
-
-    <form id="ssc-registration-form" method="post" enctype="multipart/form-data" action="{% url 'exam:temporary_user' %}">
-      {% csrf_token %}
-
-      <section class="ssc-step-panel" data-step-panel="1" aria-labelledby="step-title-1">
-        <div class="ssc-step-heading"><h2 id="step-title-1">Personal details</h2><p>Tell us about yourself as shown on your government ID proof.</p></div>
-        <div class="ssc-field-grid">
-          <div class="ssc-field">
-            <label for="name">Name (As per govt. ID Proof) <span class="ssc-required">*</span></label>
-            <input type="text" id="name" name="name" placeholder="Name" value="{{ request.POST.name|default:'' }}" required>
-            <span class="ssc-field-error">Please enter your name.</span>
-          </div>
-          <div class="ssc-field">
-            <label for="another_name">Father's/Mother's/Spouse's Name <span class="ssc-required">*</span></label>
-            <input type="text" id="another_name" name="another_name" placeholder="Father's/Mother's/Spouse's Name" value="{{ request.POST.another_name|default:'' }}" required>
-            <span class="ssc-field-error">Please enter this name.</span>
-          </div>
-          <div class="ssc-field">
-            <label for="gender">Gender (As per govt. ID Proof) <span class="ssc-required">*</span></label>
-            <select id="gender" name="gender" required>
-              <option value="">Select Gender</option>
-              <option value="male" {% if request.POST.gender == 'male' %}selected{% endif %}>Male</option>
-              <option value="female" {% if request.POST.gender == 'female' %}selected{% endif %}>Female</option>
-              <option value="transgender" {% if request.POST.gender == 'transgender' %}selected{% endif %}>Transgender</option>
-            </select>
-            <span class="ssc-field-error">Please select your gender.</span>
-          </div>
-          <div class="ssc-field">
-            <label for="date_of_birth">D.O.B (As per govt. ID Proof) <span class="ssc-required">*</span></label>
-            <input type="date" id="date_of_birth" name="date_of_birth" value="{{ request.POST.date_of_birth|default:'' }}" required>
-            <span class="ssc-field-error">Please select your date of birth.</span>
-          </div>
-          <div class="ssc-field ssc-field--wide">
-            <label for="aadhaar_number">Aadhaar Number <span class="ssc-required">*</span></label>
-            <input type="text" id="aadhaar_number" minlength="12" maxlength="12" oninput="validateAadharNumber(event)" name="aadhaar_number" placeholder="Aadhaar Number" value="{{ request.POST.aadhaar_number|default:'' }}" inputmode="numeric" required>
-            <span id="validate-error-aadhaar" class="ssc-field-error">Aadhaar Number must be exactly 12 digits.</span>
-          </div>
-        </div>
-        <div class="ssc-step-actions ssc-step-actions--end"><button type="button" class="ssc-wizard-button" data-next-step="2">Continue <span aria-hidden="true">→</span></button></div>
-      </section>
-
-      <section class="ssc-step-panel" data-step-panel="2" aria-labelledby="step-title-2" hidden>
-        <div class="ssc-step-heading"><h2 id="step-title-2">Contact &amp; address</h2><p>Keep your contact and service-area details accurate for verification.</p></div>
-        <div class="ssc-field-grid">
-          <div class="ssc-field"><label for="email">Email <span class="ssc-required">*</span></label><input type="email" id="email" name="email" placeholder="Email Address" value="{{ request.POST.email|default:'' }}" required><span class="ssc-field-error">Please enter a valid email address.</span></div>
-          <div class="ssc-field"><label for="mobile">Mobile <span class="ssc-required">*</span></label><input type="text" id="mobile" minlength="10" maxlength="10" oninput="validateMobileNumber(event)" name="mobile" placeholder="Mobile Number" value="{{ request.POST.mobile|default:'' }}" inputmode="numeric" required><span id="validate-error-mobile" class="ssc-field-error">Mobile Number must be exactly 10 digits.</span></div>
-          <div class="ssc-field"><label for="state">State <span class="ssc-required">*</span></label><select name="state" id="state" required><option value="">Select State</option>{% for state in states %}<option value="{{ state.state_id }}" {% if request.POST.state == state.state_id|stringformat:"s" or selected_state == state.state_id|stringformat:"s" %}selected{% endif %}>{{ state.name }}</option>{% endfor %}</select><span class="ssc-field-error">Please select a state.</span></div>
-          <div class="ssc-field"><label for="district">District <span class="ssc-required">*</span></label><select name="district" id="district" required><option value="">Select District</option>{% for district in districts %}<option value="{{ district.district_id }}" {% if request.POST.district == district.district_id|stringformat:"s" or selected_district == district.district_id|stringformat:"s" %}selected{% endif %}>{{ district.district_name }}</option>{% endfor %}</select><span class="ssc-field-error">Please select a district.</span></div>
-          <input type="hidden" id="district_selected" name="district_selected" value="{{ request.POST.district_selected|default:'' }}">
-          <div class="ssc-field"><label for="local_body">Local Body <span class="ssc-required">*</span></label><select id="local_body" name="local_body" required><option value="Panchayath" {% if request.POST.local_body == 'Panchayath' or not request.POST.local_body %}selected{% endif %}>Panchayath</option><option value="Corporation" {% if request.POST.local_body == 'Corporation' %}selected{% endif %}>Corporation</option><option value="Muncipality" {% if request.POST.local_body == 'Muncipality' %}selected{% endif %}>Muncipality</option></select><span class="ssc-field-error">Please select a local body.</span></div>
-          <div class="ssc-field"><label for="panchayat">Panchayat/Municipality/Corporations <span class="ssc-required">*</span></label><select id="panchayat" name="panchayat" required><option value="">Select</option>{% for panchayat in panchayats %}<option value="{{ panchayat.panchayat_id }}" {% if request.POST.panchayat == panchayat.panchayat_id|stringformat:"s" %}selected{% endif %}>{{ panchayat.name }}</option>{% endfor %}</select><span class="ssc-field-error">Please select your local area.</span></div>
-          <div class="ssc-field"><label for="ward_number">Ward Number <span class="ssc-required">*</span></label><input type="text" id="ward_number" name="ward_number" placeholder="Ward Number" value="{{ request.POST.ward_number|default:'' }}" required><span class="ssc-field-error">Please enter the ward number.</span></div>
-          <div class="ssc-field ssc-field--wide"><label for="address">Enter Your Address <span class="ssc-required">*</span></label><input type="text" id="address" name="address" placeholder="Address" value="{{ request.POST.address|default:'' }}" required><span class="ssc-field-error">Please enter your address.</span></div>
-        </div>
-        <div class="ssc-step-actions"><button type="button" class="ssc-wizard-button ssc-wizard-button--secondary" data-previous-step="1"><span aria-hidden="true">←</span> Back</button><button type="button" class="ssc-wizard-button" data-next-step="3">Continue <span aria-hidden="true">→</span></button></div>
-      </section>
-
-      <section class="ssc-step-panel" data-step-panel="3" aria-labelledby="step-title-3" hidden>
-        <div class="ssc-step-heading"><h2 id="step-title-3">Select SSC Centre Location</h2><p>Share the centre coordinates so we can confirm nearby service availability.</p></div>
-        <div class="ssc-location-box">
-          <p>Copy the latitude and longitude values from Google Maps and paste them below in comma-separated format.</p>
-          <div class="ssc-field"><label for="latitude">Latitude and longitude <span class="ssc-required">*</span></label><input type="text" id="latitude" name="latitude" placeholder="Enter Latitude and Longitude (comma seperated)" value="{{ request.POST.latitude|default:'' }}" required><span class="ssc-field-help">Example: 10.123456, 76.123456</span><span class="ssc-field-error">Please enter the centre latitude and longitude.</span></div>
-          <a href="https://www.google.com/maps/" id="googleMapBtn" class="ssc-map-link" target="_blank" rel="noopener">Try with Google Map</a>
-        </div>
-        <div class="ssc-step-actions"><button type="button" class="ssc-wizard-button ssc-wizard-button--secondary" data-previous-step="2"><span aria-hidden="true">←</span> Back</button><button type="button" class="ssc-wizard-button" data-next-step="4">Continue <span aria-hidden="true">→</span></button></div>
-      </section>
-
-      <section class="ssc-step-panel" data-step-panel="4" aria-labelledby="step-title-4" hidden>
-        <div class="ssc-step-heading"><h2 id="step-title-4">Upload documents</h2><p>Upload clear image files below 80 KB, as required for registration.</p></div>
-        <div class="ssc-upload-list">
-          <div class="ssc-upload-row ssc-field"><label for="photo">Applicant Photo <span class="ssc-required">*</span></label><input type="file" id="photo" name="photo" accept="image/*" required><span class="ssc-field-help">Accepted image formats. Upload the size below 80 KB.</span><span id="photo-file-name" class="ssc-file-name" aria-live="polite"></span><span class="ssc-field-error">Please upload your photo.</span></div>
-          <div class="ssc-upload-row ssc-field"><label for="cheque_passbook">Cancelled Cheque Leaf / Pass Book Front Page <span class="ssc-required">*</span></label><input type="file" id="cheque_passbook" name="cheque_passbook" accept="image/*" required><span class="ssc-field-help">Accepted image formats. Upload the size below 80 KB.</span><span id="cheque-file-name" class="ssc-file-name" aria-live="polite"></span><span class="ssc-field-error">Please upload the cancelled cheque leaf or passbook front page.</span></div>
-        </div>
-        <div class="ssc-step-actions"><button type="button" class="ssc-wizard-button ssc-wizard-button--secondary" data-previous-step="3"><span aria-hidden="true">←</span> Back</button><button type="button" class="ssc-wizard-button" data-next-step="5">Review Registration <span aria-hidden="true">→</span></button></div>
-      </section>
-
-      <section class="ssc-step-panel" data-step-panel="5" aria-labelledby="step-title-5" hidden>
-        <div class="ssc-step-heading"><h2 id="step-title-5">Review &amp; Pay</h2><p>Review your details before continuing to the existing secure payment flow.</p></div>
-        <div class="ssc-review-grid">
-          <div class="ssc-review-box"><h3>Personal details</h3><div class="ssc-review-list"><div class="ssc-review-item"><span>Name</span><strong data-review="name">—</strong></div><div class="ssc-review-item"><span>Parent / spouse</span><strong data-review="another_name">—</strong></div><div class="ssc-review-item"><span>Gender</span><strong data-review="gender">—</strong></div><div class="ssc-review-item"><span>Date of birth</span><strong data-review="date_of_birth">—</strong></div><div class="ssc-review-item"><span>Aadhaar</span><strong data-review="aadhaar_number">—</strong></div></div></div>
-          <div class="ssc-review-box"><h3>Contact &amp; address</h3><div class="ssc-review-list"><div class="ssc-review-item"><span>Email</span><strong data-review="email">—</strong></div><div class="ssc-review-item"><span>Mobile</span><strong data-review="mobile">—</strong></div><div class="ssc-review-item"><span>State / District</span><strong data-review="state-district">—</strong></div><div class="ssc-review-item"><span>Local body / area</span><strong data-review="local-area">—</strong></div><div class="ssc-review-item"><span>Address</span><strong data-review="address">—</strong></div></div></div>
-          <div class="ssc-review-box"><h3>Location &amp; documents</h3><div class="ssc-review-list"><div class="ssc-review-item"><span>Coordinates</span><strong data-review="latitude">—</strong></div><div class="ssc-review-item"><span>Applicant photo</span><strong data-review="photo">Not selected</strong></div><div class="ssc-review-item"><span>Cheque / passbook</span><strong data-review="cheque_passbook">Not selected</strong></div></div></div>
-          <div class="ssc-review-box ssc-fee-box"><h3>Registration fee</h3><div class="ssc-review-item"><span>Amount payable</span><strong>₹5.00</strong></div></div>
-        </div>
-        <div class="ssc-step-actions"><p class="ssc-secure-note">Your information is submitted securely through the existing registration process.</p><button type="button" class="ssc-wizard-button ssc-wizard-button--secondary" data-previous-step="4"><span aria-hidden="true">←</span> Back</button><button id="rzp-button" type="submit" class="ssc-wizard-button">Register &amp; Pay <span aria-hidden="true">→</span></button></div>
-      </section>
-    </form>
-    <p class="ssc-login-line">Already registered? <a class="ssc-login-link" href="{% url 'exam:entrepreneur_userlogin' %}">Login to your account.</a></p>
-  </main>
-</div>
+    </div>
+  </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{% static 'web/dashboard/assets/js/checkout.js' %}"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.35.0/mapbox-gl.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.1.3/mapbox-gl-geocoder.min.js"></script>
+
+<script>
+
+document.getElementById('state').addEventListener('change', function() {
+    var stateId = this.value;  // Get the selected state ID
+
+    if (stateId) {
+        fetch(`/exam/register/get_districts/?state_id=${stateId}`)
+        .then(response => response.json())
+        .then(data => {
+            var districtSelect = document.getElementById('district');
+            districtSelect.innerHTML = '<option value="">Select District</option>'; // Reset dropdown
+            
+            if (data.length > 0) {
+                data.forEach(function(district) {
+                    var option = document.createElement('option');
+                    option.value = district.id;  // Ensure you're using correct field name "id"
+                    option.textContent = district.district_name;
+                    districtSelect.appendChild(option);
+                    console.log('helloooo alansha');
+                });
+            }
+        })
+        .catch(error => console.error('Error fetching districts:', error));
+    }
+});
+</script>
+
+
+<script>
+document.getElementById('district').addEventListener('change', function() {
+    var districtId = this.value;
+    var localBody = document.getElementById('local_body').value;  // Get the selected local body value
+    var hiddenDistrictInput = document.getElementById('district_selected');
+
+    if (districtId) {
+        hiddenDistrictInput.value = districtId;
+
+        fetch(`/exam/register/get_panchayats/?district_id=${districtId}&local_body=${localBody}`)
+            .then(response => response.json())
+            .then(data => {
+                var panchayatSelect = document.getElementById('panchayat');
+                panchayatSelect.innerHTML = '<option value="">Select Panchayath</option>';
+
+                data.forEach(function(panchayat) {
+                    var option = document.createElement('option');
+                    option.value = panchayat.id;
+                    option.textContent = panchayat.name;
+                    panchayatSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error fetching Panchayats:', error));
+    }
+});
+
+
+document.getElementById('local_body').addEventListener('change', function() {
+    var districtId = document.getElementById('district').value;  // Get the selected district value
+    var localBody = this.value;  // Get the selected local body value
+    var hiddenDistrictInput = document.getElementById('district_selected');
+
+    if (districtId && localBody) {  // Ensure both district and local body are selected
+        hiddenDistrictInput.value = districtId;
+
+        fetch(`/exam/register/get_panchayats/?district_id=${districtId}&local_body=${localBody}`)
+            .then(response => response.json())
+            .then(data => {
+                var panchayatSelect = document.getElementById('panchayat');
+                panchayatSelect.innerHTML = '<option value="">Select Panchayath</option>';
+
+                data.forEach(function(panchayat) {
+                    var option = document.createElement('option');
+                    option.value = panchayat.id;
+                    option.textContent = panchayat.name;
+                    panchayatSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error fetching Panchayats:', error));
+    }
+});
+
+
+  setTimeout(function() {
+    const errorElement = document.querySelector('.error');
+    if (errorElement) {
+        errorElement.style.opacity = '0';
+        setTimeout(function() {
+            errorElement.style.display = 'none';
+        }, 500); // Wait for the fade-out transition to complete (0.5s)
+    }
+}, 5000);
+
+function validateMobileNumber(event) {
+    const input = event.target;
+    const errorElement = document.getElementById('validate-error-mobile');
+
+    input.value = input.value.replace(/\D/g, ''); // Remove non-numeric characters
+    if (input.value.length === 10) {
+        errorElement.style.display = 'none';
+    } else {
+        errorElement.style.display = 'block';
+    }
+}
+
+function validateAadharNumber(event) {
+    const input = event.target;
+    const errorElement = document.getElementById('validate-error-aadhaar');
+
+    input.value = input.value.replace(/\D/g, ''); // Remove non-numeric characters
+    if (input.value.length === 12) {
+        errorElement.style.display = 'none';
+    } else {
+        errorElement.style.display = 'block';
+    }
+}
+</script>
 
 <script>
 (function () {
-  'use strict';
+    const form = document.querySelector('form[action*="/exam/temporary_user/"]');
+    const latitudeInput = document.getElementById('latitude');
+    const mapContainer = document.getElementById('centre-location-map');
+    const currentLocationButton = document.getElementById('use-current-location');
+    const latitudeOutput = document.getElementById('selected-latitude');
+    const longitudeOutput = document.getElementById('selected-longitude');
+    const selectedPlace = document.getElementById('selected-place');
+    const locationStatus = document.getElementById('location-status');
+    const locationError = document.getElementById('location-error');
+    const submitButton = document.getElementById('rzp-button');
+    const mapboxAccessToken = "{{ mapbox_access_token|default:''|escapejs }}";
+    const checkLocationUrl = "{% url 'exam:check_location' %}";
+    const defaultCentre = [76.2711, 10.8505];
+    const defaultZoom = 7;
 
-  var form = document.getElementById('ssc-registration-form');
-  var page = document.querySelector('.ssc-registration-page');
-  var panels = Array.prototype.slice.call(document.querySelectorAll('[data-step-panel]'));
-  var progress = Array.prototype.slice.call(document.querySelectorAll('[data-step-target]'));
-  var currentStep = 1;
-  var maxUnlocked = 1;
-  var isSubmitting = false;
-  var draftKey = 'ssc-registration-draft-v2';
+    let map = null;
+    let marker = null;
+    let locationPickerReady = false;
+    let locationSelected = false;
+    let availabilityState = 'neutral';
+    let availabilityTimer = null;
+    let availabilityRequestId = 0;
+    let availabilityController = null;
 
-  function field(id) { return document.getElementById(id); }
-  function value(id) { var element = field(id); return element ? element.value.trim() : ''; }
-  function clearFieldError(element) {
-    if (element && element.closest) { element.closest('.ssc-field').classList.remove('is-invalid'); }
-  }
-  function showFieldError(element, message) {
-    var wrapper = element.closest('.ssc-field');
-    if (!wrapper) { return; }
-    wrapper.classList.add('is-invalid');
-    var error = wrapper.querySelector('.ssc-field-error');
-    if (error && message) { error.textContent = message; }
-  }
-  function validateField(element) {
-    if (!element || element.type === 'hidden') { return true; }
-    clearFieldError(element);
-    var valid = true;
-    var message = '';
-    if (element.required && element.type === 'file' && !element.files.length) {
-      valid = false;
-      message = 'Please select a file.';
-    } else if (element.required && !element.value.trim()) {
-      valid = false;
-      message = 'This field is required.';
-    } else if (element.id === 'mobile' && !/^\d{10}$/.test(element.value)) {
-      valid = false;
-      message = 'Mobile Number must be exactly 10 digits.';
-    } else if (element.id === 'aadhaar_number' && !/^\d{12}$/.test(element.value)) {
-      valid = false;
-      message = 'Aadhaar Number must be exactly 12 digits.';
-    } else if (element.type !== 'file' && !element.checkValidity()) {
-      valid = false;
-      message = element.type === 'email' ? 'Please enter a valid email address.' : 'Please enter a valid value.';
+    function setSubmitDisabled(disabled) {
+        submitButton.disabled = disabled;
+        submitButton.setAttribute('aria-disabled', String(disabled));
     }
-    if (!valid) { showFieldError(element, message); }
-    return valid;
-  }
-  function panelFields(step) {
-    return Array.prototype.slice.call(document.querySelectorAll('[data-step-panel="' + step + '"] input, [data-step-panel="' + step + '"] select'));
-  }
-  function validateStep(step) {
-    var invalid = null;
-    panelFields(step).forEach(function (element) {
-      if (!validateField(element) && !invalid) { invalid = element; }
+
+    function setAvailabilityState(state, message) {
+        availabilityState = state;
+        locationStatus.textContent = message;
+        locationStatus.className = 'location-status';
+        if (state && state !== 'neutral') {
+            locationStatus.classList.add(`is-${state}`);
+        }
+    }
+
+    function showError(message) {
+        locationError.textContent = message;
+        locationError.classList.add('is-visible');
+    }
+
+    function clearError() {
+        locationError.textContent = '';
+        locationError.classList.remove('is-visible');
+    }
+
+    function parseCoordinateValue(value) {
+        if (!value || value.split(',').length !== 2) {
+            return null;
+        }
+
+        const latitude = Number(value.split(',')[0].trim());
+        const longitude = Number(value.split(',')[1].trim());
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+            return null;
+        }
+        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+            return null;
+        }
+        return { latitude: latitude, longitude: longitude };
+    }
+
+    function setMapUnavailable(message) {
+        locationPickerReady = false;
+        setSubmitDisabled(true);
+        latitudeInput.setCustomValidity(message);
+        setAvailabilityState('error', message);
+        mapContainer.textContent = message;
+        mapContainer.classList.add('location-map-fallback');
+        showError(message);
+    }
+
+    function setLocation(longitude, latitude, placeLabel, moveMap) {
+        if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) {
+            return;
+        }
+        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+            return;
+        }
+
+        const roundedLatitude = latitude.toFixed(6);
+        const roundedLongitude = longitude.toFixed(6);
+        latitudeInput.value = `${roundedLatitude},${roundedLongitude}`;
+        latitudeOutput.value = roundedLatitude;
+        longitudeOutput.value = roundedLongitude;
+        locationSelected = true;
+        clearError();
+
+        if (placeLabel !== undefined) {
+            selectedPlace.textContent = placeLabel ? `Selected: ${placeLabel}` : '';
+        }
+
+        if (map) {
+            if (!marker) {
+                marker = new mapboxgl.Marker({ color: '#284478', draggable: true })
+                    .setLngLat([longitude, latitude])
+                    .addTo(map);
+                marker.on('dragend', function () {
+                    const draggedPoint = marker.getLngLat();
+                    setLocation(draggedPoint.lng, draggedPoint.lat, undefined, false);
+                });
+            } else {
+                marker.setLngLat([longitude, latitude]);
+            }
+
+            if (moveMap) {
+                map.flyTo({
+                    center: [longitude, latitude],
+                    zoom: Math.max(map.getZoom(), 15),
+                    essential: true
+                });
+            }
+        }
+
+        scheduleAvailabilityCheck();
+    }
+
+    function scheduleAvailabilityCheck() {
+        if (availabilityTimer) {
+            window.clearTimeout(availabilityTimer);
+        }
+        if (availabilityController) {
+            availabilityController.abort();
+            availabilityController = null;
+        }
+
+        const requestId = ++availabilityRequestId;
+        const coordinates = parseCoordinateValue(latitudeInput.value.trim());
+        setSubmitDisabled(true);
+        if (!coordinates) {
+            latitudeInput.setCustomValidity('Select your centre location on the map to continue.');
+            setAvailabilityState('neutral', 'Select a location to check centre availability.');
+            return;
+        }
+
+        setAvailabilityState('checking', 'Checking nearby centre availability\u2026');
+        latitudeInput.setCustomValidity('Checking nearby centre availability\u2026');
+        availabilityTimer = window.setTimeout(async function () {
+            const csrfInput = form.querySelector('input[name="csrfmiddlewaretoken"]');
+            const controller = new AbortController();
+            availabilityController = controller;
+            try {
+                const response = await fetch(checkLocationUrl, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    signal: controller.signal,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRFToken': csrfInput ? csrfInput.value : ''
+                    },
+                    body: JSON.stringify({
+                        latitude: coordinates.latitude,
+                        longitude: coordinates.longitude
+                    })
+                });
+                const data = await response.json();
+                if (requestId !== availabilityRequestId) {
+                    return;
+                }
+                if (!response.ok) {
+                    throw new Error(data.message || 'Location availability could not be checked.');
+                }
+                if (data.valid) {
+                    latitudeInput.setCustomValidity('');
+                    setAvailabilityState('available', data.message || 'This location is available for registration.');
+                    setSubmitDisabled(false);
+                } else {
+                    const message = data.message || 'A registered centre already exists within 1 km of this location. Please select another location.';
+                    latitudeInput.setCustomValidity(message);
+                    setAvailabilityState('unavailable', message);
+                    setSubmitDisabled(true);
+                }
+            } catch (error) {
+                if (requestId !== availabilityRequestId || error.name === 'AbortError') {
+                    return;
+                }
+                latitudeInput.setCustomValidity('Location availability could not be checked. Please try again.');
+                setAvailabilityState('error', 'Location availability could not be checked. Please try again.');
+                setSubmitDisabled(true);
+            } finally {
+                if (requestId === availabilityRequestId) {
+                    availabilityController = null;
+                }
+            }
+        }, 500);
+    }
+
+    function requestCurrentLocation() {
+        if (!navigator.geolocation) {
+            setAvailabilityState('error', 'Location access is not available in this browser. Search or click the map to choose your centre.');
+            setSubmitDisabled(true);
+            return;
+        }
+
+        setAvailabilityState('checking', 'Requesting your current location\u2026');
+        setSubmitDisabled(true);
+        navigator.geolocation.getCurrentPosition(
+            function (position) {
+                setLocation(
+                    position.coords.longitude,
+                    position.coords.latitude,
+                    'Your current location',
+                    true
+                );
+            },
+            function () {
+                setAvailabilityState('error', 'We could not access your location. Search or click the map to choose your centre.');
+                setSubmitDisabled(true);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+        );
+    }
+
+    function initialiseLocationPicker() {
+        if (!mapboxAccessToken) {
+            setMapUnavailable('Mapbox location search is not configured yet. Please contact support before submitting your registration.');
+            return;
+        }
+        if (!window.mapboxgl || !window.MapboxGeocoder) {
+            setMapUnavailable('The map service could not load. Please refresh the page or try again later.');
+            return;
+        }
+        if (typeof mapboxgl.supported === 'function' && !mapboxgl.supported()) {
+            setMapUnavailable('This browser does not support the interactive map. Please use a modern browser to choose your centre location.');
+            return;
+        }
+
+        try {
+            mapboxgl.accessToken = mapboxAccessToken;
+            map = new mapboxgl.Map({
+                container: mapContainer,
+                style: 'mapbox://styles/mapbox/standard',
+                center: defaultCentre,
+                zoom: defaultZoom,
+                attributionControl: true
+            });
+            map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+
+            const geocoder = new MapboxGeocoder({
+                accessToken: mapboxAccessToken,
+                mapboxgl: mapboxgl,
+                marker: false,
+                placeholder: 'Search your business location'
+            });
+            geocoder.addTo('#centre-location-search');
+            geocoder.on('result', function (event) {
+                const coordinates = event.result && event.result.center;
+                if (!coordinates || coordinates.length < 2) {
+                    showError('We could not read that place. Search again or click the map to choose your centre.');
+                    return;
+                }
+                setLocation(
+                    Number(coordinates[0]),
+                    Number(coordinates[1]),
+                    event.result.place_name || event.result.text || '',
+                    true
+                );
+            });
+            geocoder.on('error', function () {
+                setAvailabilityState('error', 'Search is temporarily unavailable. You can still click the map to choose your centre.');
+                setSubmitDisabled(true);
+            });
+
+            map.on('click', function (event) {
+                setLocation(event.lngLat.lng, event.lngLat.lat, '', false);
+            });
+            map.on('error', function () {
+                setMapUnavailable('Mapbox could not load the map. Please refresh the page or try again later.');
+            });
+            map.on('load', function () {
+                locationPickerReady = true;
+                const initialCoordinates = parseCoordinateValue(latitudeInput.value.trim());
+                if (initialCoordinates) {
+                    setLocation(
+                        initialCoordinates.longitude,
+                        initialCoordinates.latitude,
+                        undefined,
+                        false
+                    );
+                } else {
+                    setAvailabilityState('neutral', 'Select a location to check centre availability.');
+                    setSubmitDisabled(true);
+                }
+            });
+        } catch (error) {
+            setMapUnavailable('Mapbox could not start the map. Please refresh the page or try again later.');
+        }
+    }
+
+    currentLocationButton.addEventListener('click', requestCurrentLocation);
+
+    form.addEventListener('submit', function (event) {
+        const coordinates = parseCoordinateValue(latitudeInput.value.trim());
+        if (!locationPickerReady) {
+            event.preventDefault();
+            showError('The map is unavailable, so your centre location cannot be verified. Please try again later.');
+            return;
+        }
+        if (!locationSelected || !coordinates || availabilityState !== 'available') {
+            event.preventDefault();
+            if (!locationSelected || !coordinates) {
+                latitudeInput.setCustomValidity('Select your centre location on the map to continue.');
+                setAvailabilityState('neutral', 'Select a location to check centre availability.');
+                showError('Select your centre location on the map to continue.');
+            }
+            mapContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     });
-    if (invalid) {
-      invalid.focus();
-      return false;
+
+    const initialCoordinates = parseCoordinateValue(latitudeInput.value.trim());
+    if (initialCoordinates) {
+        latitudeOutput.value = initialCoordinates.latitude.toFixed(6);
+        longitudeOutput.value = initialCoordinates.longitude.toFixed(6);
     }
-    return true;
-  }
-  function validateAll() {
-    for (var step = 1; step <= 4; step += 1) {
-      if (!validateStep(step)) {
-        maxUnlocked = Math.max(maxUnlocked, step);
-        showStep(step, true);
-        return false;
-      }
-    }
-    return true;
-  }
-  function showStep(step, focusPanel) {
-    step = Math.max(1, Math.min(5, Number(step) || 1));
-    currentStep = step;
-    panels.forEach(function (panel) { panel.hidden = Number(panel.getAttribute('data-step-panel')) !== step; });
-    progress.forEach(function (button) {
-      var target = Number(button.getAttribute('data-step-target'));
-      var active = target === step;
-      button.classList.toggle('is-active', active);
-      button.classList.toggle('is-complete', target < step && target <= maxUnlocked);
-      button.disabled = target > maxUnlocked;
-      if (active) { button.setAttribute('aria-current', 'step'); } else { button.removeAttribute('aria-current'); }
-    });
-    saveDraft();
-    if (focusPanel) {
-      var heading = document.querySelector('[data-step-panel="' + step + '"] h2');
-      if (heading) { heading.setAttribute('tabindex', '-1'); heading.focus(); }
-    }
-  }
-  function moveNext(step) {
-    if (!validateStep(currentStep)) { return; }
-    maxUnlocked = Math.max(maxUnlocked, step);
-    showStep(step, true);
-  }
-  function draftFields() {
-    return ['name', 'another_name', 'gender', 'date_of_birth', 'aadhaar_number', 'email', 'mobile', 'state', 'district', 'district_selected', 'local_body', 'panchayat', 'ward_number', 'address', 'latitude'];
-  }
-  function saveDraft() {
-    var draft = { lastStep: currentStep };
-    draftFields().forEach(function (id) { var element = field(id); if (element) { draft[id] = element.value; } });
-    try { window.sessionStorage.setItem(draftKey, JSON.stringify(draft)); } catch (ignore) {}
-  }
-  function loadDraft() {
-    var draft = null;
-    try { draft = JSON.parse(window.sessionStorage.getItem(draftKey) || 'null'); } catch (ignore) {}
-    if (!draft) { return null; }
-    draftFields().forEach(function (id) {
-      var element = field(id);
-      if (element && !element.value && typeof draft[id] === 'string') { element.value = draft[id]; }
-    });
-    return draft;
-  }
-  function clearDraft() { try { window.sessionStorage.removeItem(draftKey); } catch (ignore) {} }
-  function updateReview() {
-    var textMap = {
-      name: value('name'), another_name: value('another_name'), gender: value('gender'), date_of_birth: value('date_of_birth'), email: value('email'), mobile: value('mobile'), address: value('address'), latitude: value('latitude')
-    };
-    Object.keys(textMap).forEach(function (key) { var target = document.querySelector('[data-review="' + key + '"]'); if (target) { target.textContent = textMap[key] || '—'; } });
-    var aadhaar = value('aadhaar_number');
-    var aadhaarTarget = document.querySelector('[data-review="aadhaar_number"]');
-    if (aadhaarTarget) { aadhaarTarget.textContent = aadhaar.length >= 4 ? 'XXXX XXXX ' + aadhaar.slice(-4) : (aadhaar || '—'); }
-    var state = field('state');
-    var district = field('district');
-    var stateDistrict = document.querySelector('[data-review="state-district"]');
-    if (stateDistrict) { stateDistrict.textContent = (state && state.options[state.selectedIndex] ? state.options[state.selectedIndex].text : '—') + ' / ' + (district && district.options[district.selectedIndex] ? district.options[district.selectedIndex].text : '—'); }
-    var localBody = field('local_body');
-    var panchayat = field('panchayat');
-    var localArea = document.querySelector('[data-review="local-area"]');
-    if (localArea) { localArea.textContent = (localBody && localBody.options[localBody.selectedIndex] ? localBody.options[localBody.selectedIndex].text : '—') + ' / ' + (panchayat && panchayat.options[panchayat.selectedIndex] ? panchayat.options[panchayat.selectedIndex].text : '—'); }
-    ['photo', 'cheque_passbook'].forEach(function (id) { var input = field(id); var target = document.querySelector('[data-review="' + id + '"]'); if (target && input && input.files.length) { target.textContent = input.files[0].name; } });
-  }
-  function setFileName(input, targetId) { var target = field(targetId); if (target) { target.textContent = input.files.length ? input.files[0].name : ''; } }
-
-  window.validateMobileNumber = function (event) {
-    var input = event.target;
-    input.value = input.value.replace(/\D/g, '').slice(0, 10);
-    validateField(input);
-  };
-  window.validateAadharNumber = function (event) {
-    var input = event.target;
-    input.value = input.value.replace(/\D/g, '').slice(0, 12);
-    validateField(input);
-  };
-
-  function populatePanchayats(districtId, localBody, preferredValue) {
-    if (!districtId || !localBody) { return; }
-    var select = field('panchayat');
-    fetch('/exam/register/get_panchayats/?district_id=' + encodeURIComponent(districtId) + '&local_body=' + encodeURIComponent(localBody))
-      .then(function (response) { return response.json(); })
-      .then(function (data) {
-        select.innerHTML = '<option value="">Select Panchayath</option>';
-        data.forEach(function (item) { var option = document.createElement('option'); option.value = item.id; option.textContent = item.name; select.appendChild(option); });
-        if (preferredValue) { select.value = preferredValue; }
-      })
-      .catch(function () { select.innerHTML = '<option value="">Select Panchayath</option>'; });
-  }
-  field('state').addEventListener('change', function () {
-    var stateId = this.value;
-    var districtSelect = field('district');
-    districtSelect.innerHTML = '<option value="">Select District</option>';
-    field('panchayat').innerHTML = '<option value="">Select</option>';
-    if (!stateId) { return; }
-    fetch('/exam/register/get_districts/?state_id=' + encodeURIComponent(stateId))
-      .then(function (response) { return response.json(); })
-      .then(function (data) { data.forEach(function (item) { var option = document.createElement('option'); option.value = item.id; option.textContent = item.district_name; districtSelect.appendChild(option); }); })
-      .catch(function () {});
-  });
-  function refreshPanchayats() { var districtId = field('district').value; var localBody = field('local_body').value; field('district_selected').value = districtId; populatePanchayats(districtId, localBody); }
-  field('district').addEventListener('change', refreshPanchayats);
-  field('local_body').addEventListener('change', refreshPanchayats);
-
-  progress.forEach(function (button) { button.addEventListener('click', function () { var target = Number(button.getAttribute('data-step-target')); if (target <= maxUnlocked) { if (target > currentStep && !validateStep(currentStep)) { return; } showStep(target, true); } }); });
-  document.querySelectorAll('[data-next-step]').forEach(function (button) { button.addEventListener('click', function () { moveNext(Number(button.getAttribute('data-next-step'))); }); });
-  document.querySelectorAll('[data-previous-step]').forEach(function (button) { button.addEventListener('click', function () { showStep(Number(button.getAttribute('data-previous-step')), true); }); });
-  field('photo').addEventListener('change', function () { setFileName(this, 'photo-file-name'); clearFieldError(this); updateReview(); saveDraft(); });
-  field('cheque_passbook').addEventListener('change', function () { setFileName(this, 'cheque-file-name'); clearFieldError(this); updateReview(); saveDraft(); });
-  form.addEventListener('input', function () { saveDraft(); updateReview(); });
-  form.addEventListener('change', function () { saveDraft(); updateReview(); });
-  form.addEventListener('submit', function (event) {
-    if (isSubmitting) { return; }
-    if (!validateAll()) { event.preventDefault(); return; }
-    isSubmitting = true;
-    var submit = field('rzp-button');
-    submit.disabled = true;
-    submit.innerHTML = 'Preparing payment…';
-    clearDraft();
-  });
-
-  var draft = loadDraft();
-  if (draft && page.getAttribute('data-server-error') === 'true') {
-    maxUnlocked = Math.max(1, Math.min(5, Number(draft.lastStep) || 1));
-    showStep(maxUnlocked, true);
-  } else {
-    clearDraft();
-    showStep(1, false);
-  }
-  updateReview();
-  if (field('state').value && field('district').value && field('local_body').value && !field('panchayat').value) { populatePanchayats(field('district').value, field('local_body').value); }
-}());
+    setSubmitDisabled(true);
+    setAvailabilityState('neutral', 'Select a location to check centre availability.');
+    initialiseLocationPicker();
+})();
 </script>
+
+
+
+<script>
+(function () {
+    const form = document.getElementById('registration-form');
+    if (!form) {
+        return;
+    }
+
+    const panels = Array.from(form.querySelectorAll('[data-wizard-panel]'));
+    const indicators = Array.from(form.querySelectorAll('[data-wizard-target]'));
+    const registrationCard = document.querySelector('.registration-card');
+    const photoInput = document.getElementById('photo');
+    const documentInput = document.getElementById('cheque_passbook');
+    const locationStatus = document.getElementById('location-status');
+    const reviewLocationStatus = document.getElementById('review-location-status');
+    const photoPreviewImage = document.getElementById('photo-preview-image');
+    const photoPreviewTitle = document.getElementById('photo-preview-title');
+    const photoPreviewText = document.getElementById('photo-preview-text');
+    const documentStatusTitle = document.getElementById('document-status-title');
+    const documentStatusText = document.getElementById('document-status-text');
+    const serverError = document.getElementById('registration-error');
+    let currentStep = 1;
+    let furthestStep = 1;
+    let photoPreviewUrl = null;
+
+    function panelFor(step) {
+        return form.querySelector(`[data-wizard-panel="${step}"]`);
+    }
+
+    function fieldWrapper(field) {
+        return field.closest('.wizard-field');
+    }
+
+    function setFieldValidityState(field, isInvalid) {
+        const wrapper = fieldWrapper(field);
+        if (!wrapper) {
+            return;
+        }
+
+        wrapper.classList.toggle('has-error', isInvalid);
+        field.setAttribute('aria-invalid', String(isInvalid));
+        let message = wrapper.querySelector('.wizard-validation-message');
+        if (isInvalid) {
+            if (!message) {
+                message = document.createElement('span');
+                message.className = 'wizard-validation-message';
+                wrapper.appendChild(message);
+            }
+            message.textContent = field.validationMessage || 'Please complete this field.';
+        } else if (message) {
+            message.remove();
+        }
+    }
+
+    function validateStep(step) {
+        const panel = panelFor(step);
+        if (!panel) {
+            return false;
+        }
+
+        if (step === 4) {
+            const statusIsAvailable = locationStatus && locationStatus.classList.contains('is-available');
+            const locationInput = document.getElementById('latitude');
+            if (!statusIsAvailable || !locationInput || !locationInput.checkValidity()) {
+                if (locationStatus) {
+                    locationStatus.setAttribute('tabindex', '-1');
+                    locationStatus.focus();
+                }
+                return false;
+            }
+        }
+
+        const fields = Array.from(panel.querySelectorAll('input:not([type="hidden"]), select, textarea'));
+        let firstInvalid = null;
+        fields.forEach(function (field) {
+            const valid = field.checkValidity();
+            setFieldValidityState(field, !valid);
+            if (!valid && !firstInvalid) {
+                firstInvalid = field;
+            }
+        });
+
+        if (firstInvalid) {
+            firstInvalid.focus();
+            return false;
+        }
+        return true;
+    }
+
+    function updateProgress() {
+        indicators.forEach(function (indicator) {
+            const step = Number(indicator.dataset.wizardTarget);
+            const mark = indicator.querySelector('.wizard-step-indicator__mark');
+            const isCurrent = step === currentStep;
+            const isComplete = step < furthestStep;
+            indicator.classList.toggle('is-active', isCurrent);
+            indicator.classList.toggle('is-complete', isComplete && !isCurrent);
+            indicator.disabled = step > furthestStep;
+            indicator.setAttribute('aria-current', isCurrent ? 'step' : 'false');
+            if (mark) {
+                mark.textContent = isComplete && !isCurrent ? '✓' : String(step);
+            }
+        });
+    }
+
+    function setActiveStep(step, shouldFocus) {
+        currentStep = step;
+        furthestStep = Math.max(furthestStep, step);
+        panels.forEach(function (panel) {
+            const isActive = Number(panel.dataset.wizardPanel) === step;
+            panel.classList.toggle('is-active', isActive);
+            panel.setAttribute('aria-hidden', String(!isActive));
+        });
+        updateProgress();
+        if (step === 5) {
+            updateReview();
+        }
+        window.dispatchEvent(new CustomEvent('wizard:step-change', { detail: { step: step } }));
+        if (step === 4) {
+            window.setTimeout(function () {
+                window.dispatchEvent(new Event('resize'));
+            }, 0);
+        }
+        if (shouldFocus) {
+            const heading = panelFor(step).querySelector('h2');
+            if (heading) {
+                heading.setAttribute('tabindex', '-1');
+                heading.focus();
+            }
+            if (registrationCard) {
+                registrationCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    }
+
+    function displayValue(id, value) {
+        const target = form.querySelector(`[data-review-value="${id}"]`);
+        if (target) {
+            target.textContent = value || '—';
+        }
+    }
+
+    function selectedText(id) {
+        const select = document.getElementById(id);
+        if (!select || !select.value) {
+            return '';
+        }
+        return select.options[select.selectedIndex].text.trim();
+    }
+
+    function maskedAadhaar(value) {
+        if (!value) {
+            return '';
+        }
+        return `•••• •••• ${value.slice(-4)}`;
+    }
+
+    function updateReview() {
+        ['name', 'email', 'mobile', 'another_name', 'date_of_birth', 'ward_number', 'address'].forEach(function (id) {
+            const field = document.getElementById(id);
+            displayValue(id, field ? field.value.trim() : '');
+        });
+        displayValue('gender', selectedText('gender'));
+        displayValue('state', selectedText('state'));
+        displayValue('district', selectedText('district'));
+        displayValue('local_body', selectedText('local_body'));
+        displayValue('panchayat', selectedText('panchayat'));
+        displayValue('aadhaar_number', maskedAadhaar(document.getElementById('aadhaar_number').value.trim()));
+
+        const photo = photoInput && photoInput.files[0];
+        const documentFile = documentInput && documentInput.files[0];
+        displayValue('photo', photo ? photo.name : 'Not selected');
+        displayValue('cheque_passbook', documentFile ? documentFile.name : 'Not selected');
+
+        const locationInput = document.getElementById('latitude');
+        displayValue('latitude', locationInput && locationInput.value ? locationInput.value : 'Not selected');
+        if (reviewLocationStatus && locationStatus) {
+            reviewLocationStatus.textContent = locationStatus.textContent || 'Location availability will appear here.';
+            reviewLocationStatus.className = 'review-location-status';
+            ['is-available', 'is-unavailable', 'is-error', 'is-checking'].forEach(function (stateClass) {
+                if (locationStatus.classList.contains(stateClass)) {
+                    reviewLocationStatus.classList.add(stateClass);
+                }
+            });
+        }
+    }
+
+    function updatePhotoPreview() {
+        const file = photoInput && photoInput.files[0];
+        if (!file) {
+            photoPreviewImage.classList.remove('is-visible');
+            photoPreviewImage.removeAttribute('src');
+            photoPreviewTitle.textContent = 'No photo selected yet';
+            photoPreviewText.textContent = 'Return to Personal Details to choose the required photo.';
+            return;
+        }
+        if (photoPreviewUrl) {
+            URL.revokeObjectURL(photoPreviewUrl);
+        }
+        photoPreviewUrl = URL.createObjectURL(file);
+        photoPreviewImage.src = photoPreviewUrl;
+        photoPreviewImage.classList.add('is-visible');
+        photoPreviewTitle.textContent = file.name;
+        photoPreviewText.textContent = 'Photo selected and ready for submission.';
+    }
+
+    function updateDocumentStatus() {
+        const file = documentInput && documentInput.files[0];
+        documentStatusTitle.textContent = file ? file.name : 'No document selected yet';
+        documentStatusText.textContent = file ? 'Cancelled cheque or passbook image selected.' : 'Choose the cancelled cheque or passbook image above.';
+    }
+
+    indicators.forEach(function (indicator) {
+        indicator.addEventListener('click', function () {
+            const target = Number(indicator.dataset.wizardTarget);
+            if (target <= furthestStep) {
+                setActiveStep(target, true);
+            }
+        });
+    });
+
+    form.querySelectorAll('[data-wizard-next]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const nextStep = Number(button.dataset.wizardNext);
+            if (validateStep(currentStep)) {
+                setActiveStep(nextStep, true);
+            }
+        });
+    });
+
+    form.querySelectorAll('[data-wizard-back]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            setActiveStep(Number(button.dataset.wizardBack), true);
+        });
+    });
+
+    form.addEventListener('input', function (event) {
+        if (event.target.matches('input, select, textarea')) {
+            setFieldValidityState(event.target, !event.target.checkValidity());
+        }
+    });
+
+    form.addEventListener('change', function (event) {
+        if (event.target.matches('input, select, textarea')) {
+            setFieldValidityState(event.target, !event.target.checkValidity());
+        }
+    });
+
+    form.addEventListener('submit', function (event) {
+        if (currentStep !== 5) {
+            event.preventDefault();
+            if (validateStep(currentStep)) {
+                setActiveStep(Math.min(currentStep + 1, 5), true);
+            }
+            return;
+        }
+        updateReview();
+    });
+
+    if (photoInput) {
+        photoInput.addEventListener('change', updatePhotoPreview);
+    }
+    if (documentInput) {
+        documentInput.addEventListener('change', updateDocumentStatus);
+    }
+
+    if (serverError && /location|centre|latitude|longitude|registered centre/i.test(serverError.textContent)) {
+        furthestStep = 4;
+        setActiveStep(4, false);
+    } else {
+        setActiveStep(1, false);
+    }
+    updatePhotoPreview();
+    updateDocumentStatus();
+    updateProgress();
+})();
+</script>
+
+<!-- JavaScript to populate districts based on the selected state -->
 
 {% endblock %}

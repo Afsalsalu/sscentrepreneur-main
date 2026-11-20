@@ -36,6 +36,7 @@ urlpatterns = [
     path("exam/save_video/", views.save_video, name="save_video"),
     path('register/get_districts/', views.get_districts, name='get_districts'),  
     path('register/get_panchayats/', views.get_panchayats, name='get_panchayats'),  
+    path('register/check-location/', views.check_location, name='check_location'),
 
     path("gotopayment/", views.gotopayment, name="gotopayment"),
 

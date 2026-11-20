@@ -28,28 +28,13 @@ X_FRAME_OPTIONS = "SAMEORIGIN"
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config("SECRET_KEY")
+SECRET_KEY = 'django-insecure-o8h523dr=hub@2=g#9kpdijqx3m%s*j5wbsik)j6^#i8ctatt^'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DJANGO_ENV = config("DJANGO_ENV", default="development").strip().lower()
-BREVO_API_KEY = config("BREVO_API_KEY", default="")
-DEBUG = DJANGO_ENV != "production"
+DEBUG = True
 
 # ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-if DJANGO_ENV == "production":
-    ALLOWED_HOSTS = [
-        "sscentrepreneur.com",
-        "www.sscentrepreneur.com",
-        "127.0.0.1",
-        "localhost",
-    ]
-    CSRF_TRUSTED_ORIGINS = [
-        "https://sscentrepreneur.com",
-        "https://www.sscentrepreneur.com",
-        "https://checkout.razorpay.com",
-    ]
-else:
-    ALLOWED_HOSTS = ["*", "sscegov.com", "sscentrepreneur.com"]
+ALLOWED_HOSTS = ['*', 'sscegov.com', 'sscentrepreneur.com']
 
 
 # Application definition
@@ -128,31 +113,53 @@ TEMPLATES = [
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
 # }
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'sscegov',
+#         'USER': 'root',
+#         'PASSWORD': 'pentagon',
+#         'HOST': 'localhost',
+#         'PORT': '3306',
+#         'OPTIONS': {
+#             'charset': 'utf8',  
+#         },
+#     }
 # }
 
-DB_ENGINE = config("DB_ENGINE", default="sqlite3").strip().lower()
-SQLITE_DB_PATH = Path(config("SQLITE_DB_PATH", default=str(BASE_DIR / "db.sqlite3")).strip()).expanduser()
+DB_ENGINE = config('DB_ENGINE', default='sqlite3').strip().lower()
+SQLITE_DB_PATH = Path(config('SQLITE_DB_PATH', default=str(BASE_DIR / 'db.sqlite3')).strip()).expanduser()
 if not SQLITE_DB_PATH.is_absolute():
     SQLITE_DB_PATH = BASE_DIR / SQLITE_DB_PATH
 
-if DB_ENGINE == "mysql":
+if DB_ENGINE == 'mysql':
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.mysql",
-            "NAME": config("DB_NAME", default=""),
-            "USER": config("DB_USER", default=""),
-            "PASSWORD": config("DB_PASSWORD", default=""),
-            "HOST": config("DB_HOST", default=""),
-            "PORT": config("DB_PORT", default=""),
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            # This deployment has one database only. Configure it in .env; never
+            # add a second connection to the source database here.
+            'NAME': config('DB_NAME', default='sscegov_db'),
+            'USER': config('DB_USER', default=''),
+            'PASSWORD': config('DB_PASSWORD', default=''),
+            'HOST': config('DB_HOST', default='127.0.0.1'),
+            'PORT': config('DB_PORT', default='3306'),
+            'OPTIONS': {
+                "charset": "utf8mb4",  # Ensure this is utf8mb4
+            },
         }
     }
 else:
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": SQLITE_DB_PATH,
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': SQLITE_DB_PATH,
         }
     }
 # Password validation
@@ -179,7 +186,7 @@ ANYMAIL = {
     }
 }
 EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="")
+DEFAULT_FROM_EMAIL = "samatwaservicecenter.gov.in@gmail.com"
 
 
 
@@ -242,14 +249,14 @@ LOGOUT_REDIRECT_URL = '/'
 # EMAIL_PORT = 587
 # EMAIL_USE_TLS = True
 # EMAIL_HOST_USER = '79f983002@smtp-brevo.com'
-# EMAIL_HOST_PASSWORD = '9YLzAk1PNcDMfQqI'
+# EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 EMAIL_BACKEND = config("EMAIL_BACKEND")
 EMAIL_HOST = config("EMAIL_HOST")
 EMAIL_PORT = config("EMAIL_PORT")
 EMAIL_HOST_USER = config("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="")
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
@@ -263,14 +270,16 @@ USE_TZ = True
 # Razorpay API
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "rzp_live_nSEm6ZJdnKS1Ov")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "54bep8rW085LCIk6rySSDcr2")
+MAPBOX_ACCESS_TOKEN = config("MAPBOX_ACCESS_TOKEN", default="")
+BREVO_API_KEY = config("BREVO_API_KEY", default="")
 
 
 # PSPDFKit API key
 PSPDFKIT_API_KEY = os.getenv("PSPDFKIT_API_KEY", "")
 
 # reCAPTCHA keys
-RECAPTCHA_SITE_KEY = config("RECAPTCHA_SITE_KEY", default="")
-RECAPTCHA_SECRET_KEY = config("RECAPTCHA_SECRET_KEY", default="")
+RECAPTCHA_SITE_KEY = os.getenv("RECAPTCHA_SITE_KEY", "6LfhACgqAAAAAH6BOnzNkIfbY-yRgk_XCNKWTH8i")
+RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY", "6LfhACgqAAAAAFqwP-iG32CZyREH66J6u43F-I8D")
 
 
 # Secure Proxy Header
@@ -279,8 +288,8 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 CSRF_FAILURE_VIEW = 'web.views.custom_csrf_failure'
 
-# Private sscentrepreneur.com -> sscegov.com integration. Keep these values in
-# the environment; never commit production credentials.
+SSCEGOV_INTEGRATION_API_KEY = config("SSCEGOV_INTEGRATION_API_KEY", default="")
+SSCEGOV_INTEGRATION_HMAC_SECRET = config("SSCEGOV_INTEGRATION_HMAC_SECRET", default="")
 SSCEGOV_SYNC_ENDPOINT = config(
     "SSCEGOV_SYNC_ENDPOINT",
     default="https://sscegov.com/api/integrations/sscentrepreneur/exam-qualified-user/",
@@ -288,6 +297,7 @@ SSCEGOV_SYNC_ENDPOINT = config(
 SSCEGOV_SYNC_API_KEY = config("SSCEGOV_SYNC_API_KEY", default="")
 SSCEGOV_SYNC_HMAC_SECRET = config("SSCEGOV_SYNC_HMAC_SECRET", default="")
 
+CSRF_TRUSTED_ORIGINS = ['https://sscegov.com', 'https://checkout.razorpay.com/v1/checkout.js']
 
 
 
@@ -502,8 +512,3 @@ DEFAULT_CHARSET = 'utf-8'
 OPTIONS = {
     'charset': 'utf8mb4',
 }
-
-
-
-
-

@@ -1,6 +1,8 @@
 # Django imports for views, request handling, and authentication
 import json
 import logging
+import math
+import re
 import random
 import string
 import uuid
@@ -18,7 +20,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError
 # from easy_pdf.views import PDFView
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -55,45 +57,16 @@ from .models import (ExamCategory, MainExamOption, MainExamProgress,
 logger = logging.getLogger(__name__)
 
 
-def _sync_qualified_user_after_commit(centre_user_id):
-    """Sync a committed centre account without affecting exam completion."""
-    try:
-        centre_user = CentreUserAccount.objects.select_related('user').get(
-            pk=centre_user_id
-        )
-        sync_result = sync_qualified_user(centre_user)
-        if not sync_result.success:
-            logger.error(
-                "SSCEGOV automatic sync failed for CentreUserAccount id=%s "
-                "status=%s: %s",
-                centre_user.pk,
-                sync_result.status,
-                sync_result.message,
-            )
-        else:
-            logger.info(
-                "SSCEGOV automatic sync succeeded for CentreUserAccount id=%s",
-                centre_user.pk,
-            )
-    except Exception:
-        logger.exception(
-            "SSCEGOV automatic sync failed for CentreUserAccount id=%s "
-            "with an unexpected error",
-            centre_user_id,
-        )
+def _get_brevo_transactional_emails_api():
+    """Build a Brevo client from settings without breaking application flows."""
+    api_key = settings.BREVO_API_KEY.strip()
+    if not api_key:
+        logger.warning("Brevo email skipped: BREVO_API_KEY is not configured.")
+        return None
 
-
-def _queue_qualified_user_sync(centre_user):
-    """Queue sync for the exact persisted account after its transaction commits."""
-    logger.info(
-        "SSCEGOV automatic sync scheduled for CentreUserAccount id=%s",
-        centre_user.pk,
-    )
-    transaction.on_commit(
-        lambda centre_user_id=centre_user.pk: _sync_qualified_user_after_commit(
-            centre_user_id
-        )
-    )
+    configuration = Configuration()
+    configuration.api_key.update({"api-key": api_key})
+    return transactional_emails_api.TransactionalEmailsApi(ApiClient(configuration))
 
 
 class UserRegistrationMixin:
@@ -200,6 +173,73 @@ from django.conf import settings
 from datetime import datetime
 
 
+_REGISTRATION_VALUE_FIELDS = (
+    "name",
+    "email",
+    "mobile",
+    "another_name",
+    "state",
+    "district",
+    "district_selected",
+    "local_body",
+    "panchayat",
+    "ward_number",
+    "gender",
+    "aadhaar_number",
+    "date_of_birth",
+    "address",
+    "latitude",
+)
+
+
+def _registration_template_context(
+    request,
+    *,
+    form=None,
+    error=None,
+    states=None,
+    districts=None,
+    panchayats=None,
+    selected_state=None,
+):
+    """Build the registration page context without exposing settings wholesale."""
+    if states is None:
+        states = RegistrationState.objects.all()
+    if selected_state is None and request.method == "POST":
+        selected_state = request.POST.get("state")
+    if districts is None:
+        districts = (
+            RegistrationDistrict.objects.filter(state=selected_state)
+            if selected_state
+            else RegistrationDistrict.objects.all()
+        )
+    if panchayats is None:
+        selected_district = request.POST.get("district") if request.method == "POST" else None
+        panchayats = (
+            RegistrationPanchayat.objects.filter(district=selected_district)
+            if selected_district
+            else RegistrationPanchayat.objects.all()
+        )
+
+    context = {
+        "states": states,
+        "districts": districts,
+        "panchayats": panchayats,
+        "selected_state": selected_state,
+        "mapbox_access_token": settings.MAPBOX_ACCESS_TOKEN,
+    }
+    if form is not None:
+        context["form"] = form
+    if error is not None:
+        context["error"] = error
+    context["registration_values"] = {field: "" for field in _REGISTRATION_VALUE_FIELDS}
+    if request.method == "POST":
+        context["registration_values"] = {
+            field: request.POST.get(field, "") for field in _REGISTRATION_VALUE_FIELDS
+        }
+    return context
+
+
 class UserRegistrationView(View):
     def get(self, request):
         states = RegistrationState.objects.all()
@@ -211,7 +251,14 @@ class UserRegistrationView(View):
         return render(
             request,
             "web/exam/register.html",
-            {"form": form, "states": states, "districts": districts, 'panchayats': panchayats, "selected_state": selected_state},
+            _registration_template_context(
+                request,
+                form=form,
+                states=states,
+                districts=districts,
+                panchayats=panchayats,
+                selected_state=selected_state,
+            ),
         )
 
     def post(self, request):
@@ -289,10 +336,17 @@ class UserRegistrationView(View):
         #     }
         # )
         # else:
-        return render(request, "web/exam/register.html",{"form": form, 
-                                                             "states": states,
-                                                               "districts": districts, 
-                                                               "selected_state": selected_state})
+        return render(
+            request,
+            "web/exam/register.html",
+            _registration_template_context(
+                request,
+                form=form,
+                states=states,
+                districts=districts,
+                selected_state=selected_state,
+            ),
+        )
 
 
 
@@ -440,11 +494,9 @@ def send_welcome_email(user_registration):
         f"<p>Best regards,<br>The SSC Team</p>"
     )
 
-    configuration = Configuration()
-    configuration.api_key["api-key"] = settings.BREVO_API_KEY
-
-    api_client = ApiClient(configuration)
-    api_instance = transactional_emails_api.TransactionalEmailsApi(api_client)
+    api_instance = _get_brevo_transactional_emails_api()
+    if api_instance is None:
+        return
 
     email_data = SendSmtpEmail(
         to=[{"email": user_registration.email}],
@@ -866,94 +918,77 @@ def main_exam(request):
             messages.error(request, "Your exam attempt has been failed due to malpractice.")
             return redirect("exam:dashboard")
 
+        # Save exam progress
+        MainExamProgress.objects.create(
+            user=user,
+            attempt_number=attempt_number,
+            correct_answers=correct_answers_count,
+            total_questions=total_questions,
+            status="Passed" if passed else f"Failed Attempt {attempt_number}",
+            completed_at=timezone.now(),
+        )
+
+        request.session.pop("exam_questions", None)
+
         if passed:
             user = request.user
             try:
-                with transaction.atomic():
-                    # Save the pass result and source account in one transaction.
-                    MainExamProgress.objects.create(
+                passed_user = MainExamProgress.objects.filter(user=request.user, status='Passed').exists()
+                temp_user = get_object_or_404(TemporaryUser, user=user)
+                try:
+                    main_reg = MainExamRegistration.objects.get(user=user)
+                except Exception as e:
+                    messages.error(request, f'erajhjhfasdfjhaf: {e}')
+                if passed_user:
+                    temp_user.main_exam_passed = True
+                    temp_user.save(update_fields=["main_exam_passed"])
+                    main_reg.is_mail_send = True
+                    main_reg.is_passed = True
+                    main_reg.save(update_fields=["is_mail_send", "is_passed"])
+                    new_username = generate_main_username()
+                    user.username = new_username
+                    user.save(update_fields=["username"])
+
+                    location = ""
+                    if temp_user.lattitude is not None and temp_user.longitude is not None:
+                        location = f"{temp_user.lattitude},{temp_user.longitude}"
+                    centre_user, _ = CentreUserAccount.objects.get_or_create(
                         user=user,
-                        attempt_number=attempt_number,
-                        correct_answers=correct_answers_count,
-                        total_questions=total_questions,
-                        status="Passed",
-                        completed_at=timezone.now(),
+                        defaults={
+                            "username": new_username,
+                            "owner_centre": temp_user.name,
+                            "mobile": temp_user.mobile,
+                            "photo": temp_user.photo,
+                            "aadhaar_number": temp_user.aadhaar_number,
+                            "email": temp_user.email,
+                            "state": temp_user.state,
+                            "district": temp_user.district,
+                            "rural_areas": temp_user.local_body,
+                            "ward_number": temp_user.ward_number,
+                            "centre_phone_number": temp_user.mobile,
+                            "pan_card_number": "-",
+                            "is_olduser": False,
+                            "centre_name": temp_user.panchayat or "None",
+                            "centre_email": temp_user.email,
+                            "another_name": temp_user.another_name,
+                            "centre_owner_address": temp_user.address,
+                            "location": location or temp_user.address or "",
+                            "is_approved": False,
+                        },
                     )
-                    request.session.pop("exam_questions", None)
-
-                    passed_user = MainExamProgress.objects.filter(
-                        user=request.user, status='Passed'
-                    ).exists()
-                    temp_user = get_object_or_404(TemporaryUser, user=user)
-                    try:
-                        main_reg = MainExamRegistration.objects.get(user=user)
-                    except Exception as e:
-                        messages.error(request, f'erajhjhfasdfjhaf: {e}')
-                    if passed_user:
-                        temp_user.main_exam_passed = True
-                        temp_user.save(update_fields=["main_exam_passed"])
-                        main_reg.is_mail_send = True
-                        main_reg.is_passed = True
-                        main_reg.save(update_fields=["is_mail_send", "is_passed"])
-                        new_username = generate_main_username()
-                        user.username = new_username
-                        user.save(update_fields=["username"])
-
-                        location = ""
-                        if temp_user.lattitude is not None and temp_user.longitude is not None:
-                            location = f"{temp_user.lattitude},{temp_user.longitude}"
-                        centre_user, _ = CentreUserAccount.objects.get_or_create(
-                            user=user,
-                            defaults={
-                                "username": new_username,
-                                "owner_centre": temp_user.name,
-                                "mobile": temp_user.mobile,
-                                "photo": temp_user.photo,
-                                "aadhaar_number": temp_user.aadhaar_number,
-                                "email": temp_user.email,
-                                "state": temp_user.state,
-                                "district": temp_user.district,
-                                "rural_areas": temp_user.local_body,
-                                "ward_number": temp_user.ward_number,
-                                "centre_phone_number": temp_user.mobile,
-                                "pan_card_number": "-",
-                                "is_olduser": False,
-                                "centre_name": temp_user.panchayat or "None",
-                                "centre_email": temp_user.email,
-                                "another_name": temp_user.another_name,
-                                "centre_owner_address": temp_user.address,
-                                "location": location or temp_user.address or "",
-                                "is_approved": False,
-                            },
-                        )
-                        if centre_user.username != new_username:
-                            centre_user.username = new_username
-                            centre_user.save(update_fields=["username"])
-
-                        # The callback receives the exact CentreUserAccount and
-                        # runs only after the exam/account transaction commits.
-                        _queue_qualified_user_sync(centre_user)
-                        main_email_send(centre_user)
-
-                    messages.success(request, "Final exam passed successfully.")
-                return render(
-                    request,
-                    "web/exam/mainexam_congratulations.html",
-                    {"score": score_percentage},
-                )
+                    if centre_user.username != new_username:
+                        centre_user.username = new_username
+                        centre_user.save(update_fields=["username"])
+                    main_email_send(centre_user)
+                    sync_result = sync_qualified_user(temp_user)
+                    if sync_result.success:
+                        messages.success(request, "Final exam passed and centre access synchronized.")
+                    else:
+                        messages.warning(request, "Final exam passed. Centre access sync is queued for retry.")
+                    return render(request, "web/exam/mainexam_congratulations.html", {"score": score_percentage})
             except Exception as e:
-                logger.exception("Final exam pass/account creation failed for user %s", user.pk)
                 messages.error(request, f'error: {e}')
         else:
-            MainExamProgress.objects.create(
-                user=user,
-                attempt_number=attempt_number,
-                correct_answers=correct_answers_count,
-                total_questions=total_questions,
-                status=f"Failed Attempt {attempt_number}",
-                completed_at=timezone.now(),
-            )
-            request.session.pop("exam_questions", None)
             remaining_attempts = MAX_ATTEMPTS - attempt_number
             if remaining_attempts > 0:
                 messages.warning(request, f"You scored {score_percentage:.2f}%. {remaining_attempts} attempts left.")
@@ -1178,21 +1213,18 @@ def details_entry(request):
             user.usertype = "centre"
             user.save()
 
-            # The form itself is a CentreUserAccount. Save that one account
-            # after the final-exam pass has been confirmed, then queue the
-            # destination sync only after this account transaction commits.
-            with transaction.atomic():
-                centre_user.user = user
-                centre_user.username = username
-                centre_user.save()
-                centre_user_account = centre_user
+            # Assign the created user to the form instance and save it to the database
+            centre_user.user = user
+            centre_user.save()
 
-                passed_final_exam = MainExamProgress.objects.filter(
-                    user=request.user,
-                    status="Passed",
-                ).exists()
-                if passed_final_exam:
-                    _queue_qualified_user_sync(centre_user_account)
+            # Create a CentreUserAccount for the user
+            centre_user_account = CentreUserAccount.objects.create(
+                user=user,
+                username=username,
+                owner_centre=centre_user.centre_name,
+                mobile=centre_user.mobile,
+                # Add other fields as needed
+            )
 
             # Access the formatted ID from the CentreUserAccount instance
             formatted_id = centre_user_account.formatted_id
@@ -1209,27 +1241,24 @@ def details_entry(request):
                 f"<p>Best regards,<br>The SSC Team</p>"
             )
 
-            configuration = Configuration()
-            configuration.api_key["api-key"] = settings.BREVO_API_KEY
+            api_instance = _get_brevo_transactional_emails_api()
 
-            api_client = ApiClient(configuration)
-            api_instance = transactional_emails_api.TransactionalEmailsApi(api_client)
+            if api_instance is not None:
+                email_data = SendSmtpEmail(
+                    to=[{"email": centre_user.email}],
+                    subject=subject,
+                    html_content=html_content,
+                    sender={
+                        "name": "Samatwa Service Centre",
+                        "email": "samatwaservicecenter.gov.in@gmail.com",
+                    },
+                )
 
-            email_data = SendSmtpEmail(
-                to=[{"email": centre_user.email}],
-                subject=subject,
-                html_content=html_content,
-                sender={
-                    "name": "Samatwa Service Centre",
-                    "email": "samatwaservicecenter.gov.in@gmail.com",
-                },
-            )
-
-            try:
-                api_response = api_instance.send_transac_email(email_data)
-                print("Email sent successfully:", api_response)
-            except ApiException as e:
-                print(f"Exception when sending email: {e}\n")
+                try:
+                    api_response = api_instance.send_transac_email(email_data)
+                    print("Email sent successfully:", api_response)
+                except ApiException as e:
+                    print(f"Exception when sending email: {e}\n")
 
             # Redirect to the dashboard after successful form submission
             return redirect("exam:dashboard")
@@ -1347,52 +1376,44 @@ def temporary_user(request):
             try:
                 lattitude, longitude = map(lambda x: float(x.strip()), location_data.split(','))  
             except (ValueError, AttributeError):
-                return render(request, "web/exam/register.html", {'error': 'There is something wrong with your latitude and longitude, please check that and submit again...!!'})
+                return render(
+                    request,
+                    "web/exam/register.html",
+                    _registration_template_context(
+                        request,
+                        states=states,
+                        districts=districts,
+                        selected_state=selected_state,
+                        error="Select your centre location on the map to continue.",
+                    ),
+                )
+            if not (-90 <= lattitude <= 90 and -180 <= longitude <= 180):
+                return render(
+                    request,
+                    "web/exam/register.html",
+                    _registration_template_context(
+                        request,
+                        states=states,
+                        districts=districts,
+                        selected_state=selected_state,
+                        error="Select your centre location on the map to continue.",
+                    ),
+                )
 
 
-            registered_users = TemporaryUser.objects.filter(main_exam_passed=True)
-
-            for user in registered_users:
-                if local_body == 'Corporation' and user.local_body == 'Corporation':
-                    if user.lattitude and user.longitude:
-                        distance = haversine(lattitude, longitude, user.lattitude, user.longitude)
-                        if distance <= 0.5:  
-                            return render(request, "web/exam/register.html", {
-                            "error": f"{user.id}Another user has already registered in this location. Please try again at another location."
-                            })
-                else:
-                    if user.lattitude and user.longitude:
-                        distance = haversine(lattitude, longitude, user.lattitude, user.longitude)
-                        if distance <= 1:  
-                            return render(request, "web/exam/register.html", {
-                            "error": f"{user.id}Another user has already registered in this location. Please try again at another location."
-                            })
-
-
-            centre_registered_users = CentreUserAccount.objects.all()
-            for user in centre_registered_users:
-                if local_body == 'Corporation' and user.rural_areas == 'corporation':
-                    if user.location:
-                        user_lat, user_lon = extract_coordinates(user.location, user.id)
-                    
-                    if user_lat and user_lon:
-                        distance = haversine(lattitude, longitude, user_lat, user_lon)
-
-                        if distance <= 0.5:  
-                                return render(request, "web/exam/register.html", {
-                                "error": f"Another user has already a centre in this location. Please try again at another location. {user.id}"
-                                })           
-                else:
-                    if user.location:
-                        user_lat, user_lon = extract_coordinates(user.location, user.id)
-                    
-                    if user_lat and user_lon:
-                        distance = haversine(lattitude, longitude, user_lat, user_lon)
-
-                        if distance <= 1:  
-                                return render(request, "web/exam/register.html", {
-                                "error": f"Another user has already a centre in this location. Please try again at another location. {user.id}"
-                                })
+            availability = check_location_availability(lattitude, longitude)
+            if not availability["valid"]:
+                return render(
+                    request,
+                    "web/exam/register.html",
+                    _registration_template_context(
+                        request,
+                        states=states,
+                        districts=districts,
+                        selected_state=selected_state,
+                        error=availability["message"],
+                    ),
+                )
 
 
             try:
@@ -1405,33 +1426,53 @@ def temporary_user(request):
                 same_aadhaar_user = TemporaryUser.objects.filter(payment=True, aadhaar_number=aadhaar_number).first()
                 same_mobile_user = TemporaryUser.objects.filter(payment=True, mobile=mobile).first()
                 if same_email_user:
-                    return render(request, "web/exam/register.html", {
-                                            "states": states,
-                                            "districts": districts,
-                                            "selected_state": selected_state, 
-                                            'error': 'Another user has already registered with this email'
-                                        })
+                    return render(
+                        request,
+                        "web/exam/register.html",
+                        _registration_template_context(
+                            request,
+                            states=states,
+                            districts=districts,
+                            selected_state=selected_state,
+                            error="Another user has already registered with this email",
+                        ),
+                    )
                 elif same_ward_user:
-                    return render(request, "web/exam/register.html", {
-                                            "states": states,
-                                            "districts": districts,
-                                            "selected_state": selected_state, 
-                                            'error': 'Another user has already registered in this location....Please Try again at another location'
-                                        })
+                    return render(
+                        request,
+                        "web/exam/register.html",
+                        _registration_template_context(
+                            request,
+                            states=states,
+                            districts=districts,
+                            selected_state=selected_state,
+                            error="Another user has already registered in this location....Please Try again at another location",
+                        ),
+                    )
                 elif same_aadhaar_user:
-                    return render(request, "web/exam/register.html", {
-                                            "states": states,
-                                            "districts": districts,
-                                            "selected_state": selected_state, 
-                                            'error': 'Another user has already registered with this aadhaar number'
-                                        })
+                    return render(
+                        request,
+                        "web/exam/register.html",
+                        _registration_template_context(
+                            request,
+                            states=states,
+                            districts=districts,
+                            selected_state=selected_state,
+                            error="Another user has already registered with this aadhaar number",
+                        ),
+                    )
                 elif same_mobile_user:
-                    return render(request, "web/exam/register.html", {
-                                            "states": states,
-                                            "districts": districts,
-                                            "selected_state": selected_state, 
-                                            'error': 'Another user has already registered with this mobile number'
-                                        })
+                    return render(
+                        request,
+                        "web/exam/register.html",
+                        _registration_template_context(
+                            request,
+                            states=states,
+                            districts=districts,
+                            selected_state=selected_state,
+                            error="Another user has already registered with this mobile number",
+                        ),
+                    )
 
 
             except Exception as e:
@@ -1468,11 +1509,16 @@ def temporary_user(request):
                 print(e)
 
     # Render Registration Form
-    return render(request, "web/exam/register.html", {
-        "states": states,
-        "districts": districts,
-        "selected_state": selected_state
-    })
+    return render(
+        request,
+        "web/exam/register.html",
+        _registration_template_context(
+            request,
+            states=states,
+            districts=districts,
+            selected_state=selected_state,
+        ),
+    )
     
     
 
@@ -1585,12 +1631,9 @@ def tec_email_send(user_registration):
         f"<p>Best regards,<br>The SSC Team</p>"
     )
 
-    # Sendinblue Configuration
-    configuration = Configuration()
-    configuration.api_key["api-key"] = settings.BREVO_API_KEY
-
-    api_client = ApiClient(configuration)
-    api_instance = transactional_emails_api.TransactionalEmailsApi(api_client)
+    api_instance = _get_brevo_transactional_emails_api()
+    if api_instance is None:
+        return
 
     email_data = SendSmtpEmail(
         to=[{"email": user_registration.email}],
@@ -1657,6 +1700,125 @@ def haversine(lat1, lon1, lat2, lon2):
     return distance
 
 
+_COORDINATE_NUMBER = r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?"
+_PLAIN_COORDINATES = re.compile(
+    rf"^\s*({_COORDINATE_NUMBER})\s*,\s*({_COORDINATE_NUMBER})\s*$"
+)
+_GOOGLE_COORDINATES = re.compile(
+    rf"!3d({_COORDINATE_NUMBER})!2d({_COORDINATE_NUMBER})"
+)
+LOCATION_CONFLICT_MESSAGE = (
+    "A registered centre already exists within 1 km of this location. "
+    "Please select another location."
+)
+LOCATION_AVAILABLE_MESSAGE = "This location is available for registration."
+
+
+def _coerce_coordinate_pair(latitude, longitude):
+    """Return a valid coordinate pair, or None for malformed input."""
+    try:
+        latitude = float(latitude)
+        longitude = float(longitude)
+    except (TypeError, ValueError):
+        return None
+
+    if not (
+        math.isfinite(latitude)
+        and math.isfinite(longitude)
+        and -90 <= latitude <= 90
+        and -180 <= longitude <= 180
+    ):
+        return None
+    return latitude, longitude
+
+
+def parse_location_coordinates(value):
+    """Safely extract latitude/longitude from plain or legacy map values."""
+    if not isinstance(value, str) or not value.strip():
+        return None
+
+    match = _PLAIN_COORDINATES.fullmatch(value)
+    if match is None:
+        match = _GOOGLE_COORDINATES.search(value)
+    if match is None:
+        return None
+    return _coerce_coordinate_pair(match.group(1), match.group(2))
+
+
+def _registered_location_coordinates():
+    """Yield stored locations without exposing or depending on centre identity."""
+    for user in TemporaryUser.objects.all():
+        coordinates = _coerce_coordinate_pair(
+            getattr(user, "lattitude", None), getattr(user, "longitude", None)
+        )
+        if coordinates is not None:
+            yield coordinates, "temporary_user"
+
+    for user in CentreUserAccount.objects.all():
+        coordinates = parse_location_coordinates(getattr(user, "location", ""))
+        if coordinates is not None:
+            yield coordinates, "centre_user"
+
+
+def check_location_availability(latitude, longitude):
+    """Apply the single registration proximity rule used by AJAX and POST."""
+    coordinates = _coerce_coordinate_pair(latitude, longitude)
+    if coordinates is None:
+        return {"valid": False, "message": "Invalid location coordinates."}
+
+    latitude, longitude = coordinates
+    nearest_distance = None
+    for (existing_latitude, existing_longitude), conflict_type in _registered_location_coordinates():
+        distance = haversine(
+            latitude, longitude, existing_latitude, existing_longitude
+        )
+        if nearest_distance is None or distance < nearest_distance:
+            nearest_distance = distance
+        if distance <= 1.0:
+            return {
+                "valid": False,
+                "message": LOCATION_CONFLICT_MESSAGE,
+                "nearest_distance_km": round(distance, 3),
+                "conflict_type": conflict_type,
+            }
+
+    result = {
+        "valid": True,
+        "message": LOCATION_AVAILABLE_MESSAGE,
+    }
+    if nearest_distance is not None:
+        result["nearest_distance_km"] = round(nearest_distance, 3)
+    return result
+
+
+def check_location(request):
+    """CSRF-protected availability endpoint for the registration map."""
+    if request.method != "POST":
+        return JsonResponse(
+            {"valid": False, "message": "Only POST requests are allowed."},
+            status=405,
+        )
+
+    payload = request.POST
+    if request.content_type.startswith("application/json"):
+        try:
+            payload = json.loads(request.body or "{}")
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return JsonResponse(
+                {"valid": False, "message": "Invalid location request."}, status=400
+            )
+
+    latitude = payload.get("latitude") if hasattr(payload, "get") else None
+    longitude = payload.get("longitude") if hasattr(payload, "get") else None
+    coordinates = _coerce_coordinate_pair(latitude, longitude)
+    if coordinates is None:
+        return JsonResponse(
+            {"valid": False, "message": "Invalid location coordinates."}, status=400
+        )
+
+    return JsonResponse(check_location_availability(*coordinates))
+
+
 
 def certificate_view(request):
     current_user = TemporaryUser.objects.get(user=request.user)
@@ -1688,12 +1850,9 @@ def tec_passed_email_send(user_registration):
         f"<p>Best regards,<br>The SSC Team</p>"
     )
 
-    # Sendinblue Configuration
-    configuration = Configuration()
-    configuration.api_key["api-key"] = settings.BREVO_API_KEY
-
-    api_client = ApiClient(configuration)
-    api_instance = transactional_emails_api.TransactionalEmailsApi(api_client)
+    api_instance = _get_brevo_transactional_emails_api()
+    if api_instance is None:
+        return
 
     email_data = SendSmtpEmail(
         to=[{"email": user_registration.user.email}],
@@ -1742,12 +1901,9 @@ def main_email_send(user_registration):
         f"<p>Best regards,<br>The SSC Team</p>"
     )
 
-    # Sendinblue Configuration
-    configuration = Configuration()
-    configuration.api_key["api-key"] = settings.BREVO_API_KEY
-
-    api_client = ApiClient(configuration)
-    api_instance = transactional_emails_api.TransactionalEmailsApi(api_client)
+    api_instance = _get_brevo_transactional_emails_api()
+    if api_instance is None:
+        return
 
     email_data = SendSmtpEmail(
         to=[{"email": user_registration.email}],
@@ -1949,16 +2105,9 @@ def capture_image(request):
     return JsonResponse({'success': False, 'message': 'No image received', 'redirect_url': '/exam/dashboard/'})
 
 
-import re
 def extract_coordinates(url, user_id):
-    latitude = re.search(r"!3d([0-9.\-]+)", url)
-    longitude = re.search(r"!2d([0-9.\-]+)", url)
-
-    if latitude and longitude:
-        return float(latitude.group(1)), float(longitude.group(1))
-    else:
-        print("Coordinates not found.")
-        return None, None
+    del user_id  # Kept for compatibility with existing map-view callers.
+    return parse_location_coordinates(url) or (None, None)
 
 
 def map_view(request):
@@ -1966,26 +2115,7 @@ def map_view(request):
     users = []
     for user in CentreUserAccount.objects.exclude(location__isnull=True).exclude(location=''):
         lat, lon = extract_coordinates(user.location, user.id)
-        if lat and lon:
+        if lat is not None and lon is not None:
             users.append({'id': user.id, 'location_lat': lat, 'location_lon': lon, 'owner': user.owner_centre})
 
     return render(request, 'web/exam/map_view.html', {'users': users})
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

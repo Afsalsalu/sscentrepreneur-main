@@ -1,5 +1,6 @@
 # Django imports for views, request handling, and authentication
 import json
+import logging
 import random
 import string
 import uuid
@@ -45,6 +46,21 @@ from .models import (ExamCategory, MainExamOption, MainExamProgress,
 
 
 
+
+
+logger = logging.getLogger(__name__)
+
+
+def _get_brevo_transactional_emails_api():
+    """Build a Brevo client from settings without breaking exam workflows."""
+    api_key = settings.BREVO_API_KEY.strip()
+    if not api_key:
+        logger.warning("Brevo email skipped: BREVO_API_KEY is not configured.")
+        return None
+
+    configuration = Configuration()
+    configuration.api_key.update({"api-key": api_key})
+    return transactional_emails_api.TransactionalEmailsApi(ApiClient(configuration))
 
 
 class UserRegistrationMixin:
@@ -384,11 +400,9 @@ def send_welcome_email(user_registration):
         f"<p>Best regards,<br>The SSC Team</p>"
     )
 
-    configuration = Configuration()
-    configuration.api_key["api-key"] = settings.SENDINBLUE_API_KEY
-
-    api_client = ApiClient(configuration)
-    api_instance = transactional_emails_api.TransactionalEmailsApi(api_client)
+    api_instance = _get_brevo_transactional_emails_api()
+    if api_instance is None:
+        return
 
     email_data = SendSmtpEmail(
         to=[{"email": user_registration.email}],
@@ -1066,27 +1080,23 @@ def details_entry(request):
                 f"<p>Best regards,<br>The SSC Team</p>"
             )
 
-            configuration = Configuration()
-            configuration.api_key["api-key"] = settings.BREVO_API_KEY
+            api_instance = _get_brevo_transactional_emails_api()
+            if api_instance is not None:
+                email_data = SendSmtpEmail(
+                    to=[{"email": centre_user.email}],
+                    subject=subject,
+                    html_content=html_content,
+                    sender={
+                        "name": "Samatwa Service Centre",
+                        "email": "samatwaservicecenter.gov.in@gmail.com",
+                    },
+                )
 
-            api_client = ApiClient(configuration)
-            api_instance = transactional_emails_api.TransactionalEmailsApi(api_client)
-
-            email_data = SendSmtpEmail(
-                to=[{"email": centre_user.email}],
-                subject=subject,
-                html_content=html_content,
-                sender={
-                    "name": "Samatwa Service Centre",
-                    "email": "samatwaservicecenter.gov.in@gmail.com",
-                },
-            )
-
-            try:
-                api_response = api_instance.send_transac_email(email_data)
-                print("Email sent successfully:", api_response)
-            except ApiException as e:
-                print(f"Exception when sending email: {e}\n")
+                try:
+                    api_response = api_instance.send_transac_email(email_data)
+                    print("Email sent successfully:", api_response)
+                except ApiException as e:
+                    print(f"Exception when sending email: {e}\n")
 
             # Redirect to the dashboard after successful form submission
             return redirect("exam:dashboard")

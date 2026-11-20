@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.auth.views import PasswordChangeView
+from django.conf import settings
 from django.core import serializers
 from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
@@ -21,7 +22,6 @@ from django.views import View
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
-import logging
 from decimal import Decimal
 
 import sib_api_v3_sdk
@@ -62,6 +62,20 @@ from .models import (AboutBlog, AboutPage, AddState, Career, CareerForm,
                      Table_companyDetailschild, Table_Companydetailsmaster,
                      Table_Contra_Entry, Table_DrCrNote, Table_Journal_Entry,
                      Table_Voucher, VoucherConfiguration, Wallet)
+
+
+def _get_brevo_transactional_emails_api():
+    """Build a Brevo client from settings without breaking admin workflows."""
+    api_key = settings.BREVO_API_KEY.strip()
+    if not api_key:
+        logger.warning("Brevo email skipped: BREVO_API_KEY is not configured.")
+        return None
+
+    configuration = sib_api_v3_sdk.Configuration()
+    configuration.api_key.update({"api-key": api_key})
+    return sib_api_v3_sdk.TransactionalEmailsApi(
+        sib_api_v3_sdk.ApiClient(configuration)
+    )
 
 
 
@@ -529,28 +543,24 @@ class AddHeadOfficeView(AdminOrHeadOfficeRequiredMixin, CreateView):
             f"<p>Best regards,<br>The SSC Team</p>"
         )
 
-        # Send email using Brevo API
-        configuration = sib_api_v3_sdk.Configuration()
-        configuration.api_key["api-key"] = settings.BREVO_API_KEY
-        api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
-            sib_api_v3_sdk.ApiClient(configuration)
-        )
+        # Send email using Brevo API when configured.
+        api_instance = _get_brevo_transactional_emails_api()
+        if api_instance is not None:
+            email_data = sib_api_v3_sdk.SendSmtpEmail(
+                to=[{"email": form.cleaned_data["email"]}],
+                subject=subject,
+                html_content=html_content,
+                sender={
+                    "name": "Samatwa Service Centre",
+                    "email": "samatwaservicecenter.gov.in@gmail.com",
+                },
+            )
 
-        email_data = sib_api_v3_sdk.SendSmtpEmail(
-            to=[{"email": form.cleaned_data["email"]}],
-            subject=subject,
-            html_content=html_content,
-            sender={
-                "name": "Samatwa Service Centre",
-                "email": "samatwaservicecenter.gov.in@gmail.com",
-            },
-        )
-
-        try:
-            api_response = api_instance.send_transac_email(email_data)
-            print("Email sent successfully:", api_response)
-        except ApiException as e:
-            print("Exception when sending email: %s\n" % e)
+            try:
+                api_response = api_instance.send_transac_email(email_data)
+                print("Email sent successfully:", api_response)
+            except ApiException as e:
+                print("Exception when sending email: %s\n" % e)
 
         return super().form_valid(form)
 
@@ -800,27 +810,24 @@ class AddCentreUserAdminView(CreateView):
 
         print("Email content:", html_content)
 
-        # Send the email via Brevo API
-        configuration = sib_api_v3_sdk.Configuration()
-        configuration.api_key["api-key"] = settings.BREVO_API_KEY
-        api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
-            sib_api_v3_sdk.ApiClient(configuration)
-        )
-        email_data = sib_api_v3_sdk.SendSmtpEmail(
-            to=[{"email": email}],
-            subject=subject,
-            html_content=html_content,
-            sender={
-                "name": "Samatwa Service Centre",
-                "email": "samatwaservicecenter.gov.in@gmail.com",
-            },
-        )
+        # Send the email via Brevo when configured.
+        api_instance = _get_brevo_transactional_emails_api()
+        if api_instance is not None:
+            email_data = sib_api_v3_sdk.SendSmtpEmail(
+                to=[{"email": email}],
+                subject=subject,
+                html_content=html_content,
+                sender={
+                    "name": "Samatwa Service Centre",
+                    "email": "samatwaservicecenter.gov.in@gmail.com",
+                },
+            )
 
-        try:
-            api_response = api_instance.send_transac_email(email_data)
-            print("Email sent successfully:", api_response)
-        except ApiException as e:
-            print("Exception when sending email: %s\n" % e)
+            try:
+                api_response = api_instance.send_transac_email(email_data)
+                print("Email sent successfully:", api_response)
+            except ApiException as e:
+                print("Exception when sending email: %s\n" % e)
 
         return super().form_valid(form)
 
@@ -1622,7 +1629,6 @@ class StateDetailView(DetailView):
 
 
 import pdfkit
-from django.conf import settings
 from django.http import HttpResponse
 from django.templatetags.static import static
 from django.views.decorators.csrf import csrf_exempt
