@@ -17,6 +17,7 @@ import os
 from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
@@ -131,7 +132,12 @@ TEMPLATES = [
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 # }
 
-if DJANGO_ENV == "production":
+DB_ENGINE = config("DB_ENGINE", default="sqlite3").strip().lower()
+SQLITE_DB_PATH = Path(config("SQLITE_DB_PATH", default=str(BASE_DIR / "db.sqlite3")).strip()).expanduser()
+if not SQLITE_DB_PATH.is_absolute():
+    SQLITE_DB_PATH = BASE_DIR / SQLITE_DB_PATH
+
+if DB_ENGINE == "mysql":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.mysql",
@@ -146,7 +152,7 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": SQLITE_DB_PATH,
         }
     }
 # Password validation
@@ -249,9 +255,6 @@ DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="")
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'web.User'
-
-load_dotenv()
-
 
 TIME_ZONE = 'Asia/Kolkata'
 USE_TZ = True
