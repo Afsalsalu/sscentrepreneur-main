@@ -20,7 +20,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 # from easy_pdf.views import PDFView
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -37,6 +37,10 @@ from sib_api_v3_sdk.rest import ApiException
 
 
 from .models.user_registration import MainExamRegistration
+from .local_accounts import (
+    LocalCentreUserAccountError,
+    ensure_centre_user_account_for_pass,
+)
 
 # Custom imports for user forms and email utilities
 from web.forms import CentreUserForm
@@ -897,7 +901,37 @@ def main_exam(request):
         attempt_number = 1 if not previous_attempts.exists() else previous_attempts.first().attempt_number + 1
 
         if previous_attempts.exists() and previous_attempts.first().status == "Passed":
-            messages.info(request, "You have already passed the exam.")
+            try:
+                temp_user = get_object_or_404(TemporaryUser, user=user)
+                with transaction.atomic():
+                    ensure_centre_user_account_for_pass(
+                        user=user,
+                        temp_user=temp_user,
+                        username=user.username,
+                    )
+            except LocalCentreUserAccountError as exc:
+                logger.error(
+                    "Local CentreUserAccount repair failed user_id=%s candidate_id=%s error_type=%s",
+                    user.pk,
+                    getattr(temp_user, "pk", "unknown"),
+                    type(exc).__name__,
+                )
+                messages.error(
+                    request,
+                    "Your exam is already passed, but local centre access needs support review.",
+                )
+            except Exception as exc:
+                logger.error(
+                    "Passed-exam local account repair failed user_id=%s error_type=%s",
+                    user.pk,
+                    type(exc).__name__,
+                )
+                messages.error(
+                    request,
+                    "Your exam is already passed, but local centre access needs support review.",
+                )
+            else:
+                messages.info(request, "You have already passed the exam.")
             return redirect("exam:dashboard")
 
         if attempt_number > MAX_ATTEMPTS:
@@ -932,62 +966,73 @@ def main_exam(request):
 
         if passed:
             user = request.user
+            temp_user = None
             try:
-                passed_user = MainExamProgress.objects.filter(user=request.user, status='Passed').exists()
                 temp_user = get_object_or_404(TemporaryUser, user=user)
-                try:
-                    main_reg = MainExamRegistration.objects.get(user=user)
-                except Exception as e:
-                    messages.error(request, f'erajhjhfasdfjhaf: {e}')
-                if passed_user:
+                with transaction.atomic():
                     temp_user.main_exam_passed = True
                     temp_user.save(update_fields=["main_exam_passed"])
-                    main_reg.is_mail_send = True
-                    main_reg.is_passed = True
-                    main_reg.save(update_fields=["is_mail_send", "is_passed"])
+
+                    main_reg = MainExamRegistration.objects.filter(user=user).first()
+                    if main_reg is not None:
+                        main_reg.is_mail_send = True
+                        main_reg.is_passed = True
+                        main_reg.save(update_fields=["is_mail_send", "is_passed"])
+                    else:
+                        logger.warning(
+                            "MainExamRegistration missing user_id=%s candidate_id=%s",
+                            user.pk,
+                            temp_user.pk,
+                        )
+
                     new_username = generate_main_username()
                     user.username = new_username
                     user.save(update_fields=["username"])
-
-                    location = ""
-                    if temp_user.lattitude is not None and temp_user.longitude is not None:
-                        location = f"{temp_user.lattitude},{temp_user.longitude}"
-                    centre_user, _ = CentreUserAccount.objects.get_or_create(
+                    centre_user, _ = ensure_centre_user_account_for_pass(
                         user=user,
-                        defaults={
-                            "username": new_username,
-                            "owner_centre": temp_user.name,
-                            "mobile": temp_user.mobile,
-                            "photo": temp_user.photo,
-                            "aadhaar_number": temp_user.aadhaar_number,
-                            "email": temp_user.email,
-                            "state": temp_user.state,
-                            "district": temp_user.district,
-                            "rural_areas": temp_user.local_body,
-                            "ward_number": temp_user.ward_number,
-                            "centre_phone_number": temp_user.mobile,
-                            "pan_card_number": "-",
-                            "is_olduser": False,
-                            "centre_name": temp_user.panchayat or "None",
-                            "centre_email": temp_user.email,
-                            "another_name": temp_user.another_name,
-                            "centre_owner_address": temp_user.address,
-                            "location": location or temp_user.address or "",
-                            "is_approved": False,
-                        },
+                        temp_user=temp_user,
+                        username=new_username,
                     )
-                    if centre_user.username != new_username:
-                        centre_user.username = new_username
-                        centre_user.save(update_fields=["username"])
-                    main_email_send(centre_user)
-                    sync_result = sync_qualified_user(temp_user)
-                    if sync_result.success:
-                        messages.success(request, "Final exam passed and centre access synchronized.")
-                    else:
-                        messages.warning(request, "Final exam passed. Centre access sync is queued for retry.")
-                    return render(request, "web/exam/mainexam_congratulations.html", {"score": score_percentage})
-            except Exception as e:
-                messages.error(request, f'error: {e}')
+
+                main_email_send(centre_user)
+                sync_result = sync_qualified_user(temp_user)
+                if sync_result.success:
+                    messages.success(request, "Final exam passed and centre access synchronized.")
+                else:
+                    messages.warning(request, "Final exam passed. Centre access sync is queued for retry.")
+                return render(request, "web/exam/mainexam_congratulations.html", {"score": score_percentage})
+            except LocalCentreUserAccountError as exc:
+                logger.error(
+                    "Local CentreUserAccount creation failed user_id=%s candidate_id=%s error_type=%s",
+                    user.pk,
+                    getattr(temp_user, "pk", "unknown"),
+                    type(exc).__name__,
+                )
+                messages.error(
+                    request,
+                    "Exam passed, but local centre access could not be created. Please contact support.",
+                )
+                return render(
+                    request,
+                    "web/exam/mainexam_congratulations.html",
+                    {"score": score_percentage},
+                )
+            except Exception as exc:
+                logger.error(
+                    "Exam pass local account flow failed user_id=%s candidate_id=%s error_type=%s",
+                    user.pk,
+                    getattr(temp_user, "pk", "unknown"),
+                    type(exc).__name__,
+                )
+                messages.error(
+                    request,
+                    "Exam passed, but local centre access could not be completed. Please contact support.",
+                )
+                return render(
+                    request,
+                    "web/exam/mainexam_congratulations.html",
+                    {"score": score_percentage},
+                )
         else:
             remaining_attempts = MAX_ATTEMPTS - attempt_number
             if remaining_attempts > 0:
